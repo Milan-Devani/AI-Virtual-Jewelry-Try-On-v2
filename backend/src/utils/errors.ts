@@ -11,6 +11,14 @@ export type ErrorCode =
   | "STORAGE_ERROR"
   | "RATE_LIMITED"
   | "UNAUTHORIZED"
+  | "AUTH_REQUIRED"
+  | "FORBIDDEN"
+  | "MEMBERSHIP_REQUIRED"
+  | "MEMBERSHIP_PENDING"
+  | "MEMBERSHIP_EXPIRED"
+  | "LIMIT_EXCEEDED"
+  | "DUPLICATE_UTR"
+  | "ALREADY_APPROVED"
   | "NOT_FOUND"
   | "INTERNAL_ERROR";
 
@@ -62,7 +70,19 @@ export class AiTimeoutError extends AppError {
 }
 
 export class NotFoundError extends AppError {
-  constructor(message: string = "Requested resource not found") {
+  constructor(message: string = "Resource not found.") {
     super("NOT_FOUND", message, 404);
+  }
+}
+
+export class AuthenticationError extends AppError {
+  constructor(message: string = "Authentication required.", details?: unknown) {
+    super("AUTH_REQUIRED", message, 401, details);
+  }
+}
+
+export class ForbiddenError extends AppError {
+  constructor(message: string = "Access forbidden.", details?: unknown) {
+    super("FORBIDDEN", message, 403, details);
   }
 }

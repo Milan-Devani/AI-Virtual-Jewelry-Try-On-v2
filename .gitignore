@@ -4,15 +4,6 @@ node_modules/
 .pnp.js
 
 # Environment Variables & Secrets (CRITICAL: Never commit API keys or secrets)
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-backend/.env
-frontend/.env
-frontend/.env.local
-*.env
 
 # Build outputs
 dist/

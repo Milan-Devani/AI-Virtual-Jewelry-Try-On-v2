@@ -56,7 +56,7 @@ export class TryOnController {
         background: parsedParams.data.background,
         aspectRatio: parsedParams.data.aspectRatio,
         imageSize: parsedParams.data.imageSize,
-        userId: parsedParams.data.userId,
+        userId: req.user?.id || parsedParams.data.userId || "anonymous",
       });
 
       const response: ApiSuccessResponse<typeof result> = {

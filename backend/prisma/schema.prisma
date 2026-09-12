@@ -1,0 +1,156 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum SubscriptionStatus {
+  inactive
+  pending_verification
+  active
+  expired
+  cancelled
+  rejected
+}
+
+enum VerificationStatus {
+  pending
+  approved
+  rejected
+}
+
+model User {
+  id                    String                 @id @default(uuid())
+  email                 String                 @unique
+  name                  String?
+  passwordHash          String?
+  role                  Role                   @default(USER)
+  forcePasswordChange   Boolean                @default(false)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  subscriptions         Subscription[]
+  paymentVerifications  PaymentVerification[]
+  generationUsages      GenerationUsage[]
+  notifications         Notification[]
+  auditLogsAsAdmin      AuditLog[]             @relation("AdminAuditLogs")
+}
+
+model MembershipPlan {
+  id                    String                 @id @default(uuid())
+  name                  String                 @unique
+  slug                  String                 @unique
+  description           String?
+  price                 Int                    // Amount in INR (e.g. 999, 1999, 4999)
+  interval              String                 @default("monthly") // monthly | yearly
+  generationLimit       Int                    // E.g., 50, 150, 500
+  features              Json                   // Array of string features
+  isActive              Boolean                @default(true)
+  sortOrder             Int                    @default(0)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  subscriptions         Subscription[]
+  paymentVerifications  PaymentVerification[]
+}
+
+model Subscription {
+  id                    String                 @id @default(uuid())
+  userId                String
+  planId                String
+  status                SubscriptionStatus     @default(inactive)
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
+  cancelAtPeriodEnd     Boolean                @default(false)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                  MembershipPlan         @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([status])
+}
+
+model PaymentVerification {
+  id                    String                 @id @default(uuid())
+  userId                String
+  planId                String
+  utrNumber             String                 @unique
+  amount                Int
+  screenshotUrl         String
+  status                VerificationStatus     @default(pending)
+  adminNotes            String?
+  reviewedBy            String?
+  reviewedAt            DateTime?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                  MembershipPlan         @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([status])
+}
+
+model GenerationUsage {
+  id                    String                 @id @default(uuid())
+  userId                String
+  category              String
+  mode                  String                 @default("custom-model")
+  modelConfig           Json?
+  prompt                String?
+  inputModelUrl         String?
+  inputJewelryUrl       String?
+  outputImageUrl        String
+  status                String                 @default("success") // success | failed
+  creditsUsed           Int                    @default(1)
+  metadata              Json?
+  createdAt             DateTime               @default(now())
+
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Notification {
+  id                    String                 @id @default(uuid())
+  userId                String
+  title                 String
+  message               String
+  type                  String                 @default("info") // info | success | warning | payment
+  isRead                Boolean                @default(false)
+  metadata              Json?
+  createdAt             DateTime               @default(now())
+
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+model AuditLog {
+  id                    String                 @id @default(uuid())
+  adminId               String
+  action                String                 // APPROVE_PAYMENT, REJECT_PAYMENT, GRANT_MEMBERSHIP, REVOKE_MEMBERSHIP, UPDATE_PLAN
+  targetType            String                 // User, PaymentVerification, MembershipPlan, Subscription
+  targetId              String
+  details               Json?
+  ipAddress             String?
+  createdAt             DateTime               @default(now())
+
+  admin                 User                   @relation("AdminAuditLogs", fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([action])
+  @@index([createdAt])
+}

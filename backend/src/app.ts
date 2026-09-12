@@ -106,8 +106,9 @@ app.use((req, res, next) => {
 });
 
 // JSON and URL-encoded body parser
-app.use(express.json({ limit: `${config.maxUploadMb + 2}mb` }));
-app.use(express.urlencoded({ extended: true, limit: `${config.maxUploadMb + 2}mb` }));
+const bodyLimit = `${(Number(config?.maxUploadMb) || 8) + 2}mb`;
+app.use(express.json({ limit: bodyLimit }));
+app.use(express.urlencoded({ extended: true, limit: bodyLimit }));
 
 // Serve Local Uploads directory statically if using local storage
 const uploadsDir = path.join(process.cwd(), "uploads");
@@ -117,6 +118,18 @@ app.use("/uploads", express.static(uploadsDir));
 app.use("/api", generalLimiter);
 
 // Mount API routes
+import { authRoutes } from "./auth/auth.routes.js";
+import { membershipRoutes } from "./membership/membership.routes.js";
+import { paymentRoutes } from "./payments/payment.routes.js";
+import { adminRoutes } from "./admin/admin.routes.js";
+import { meRoutes } from "./routes/me.routes.js";
+
+app.use("/api/auth", authRoutes);
+app.use("/api/membership", membershipRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/me", meRoutes);
+app.use("/api/try-on", tryOnRoutes);
 app.use("/api", healthRoutes);
 app.use("/api", tryOnRoutes);
 

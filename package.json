@@ -1,11 +1,16 @@
 {
   "name": "jewelai-workspace",
   "version": "1.0.0",
-  "description": "Production-Ready AI Jewelry Virtual Try-On Platform",
+  "description": "Production-Ready AI Jewelry Virtual Try-On Platform with Supabase & Admin Dashboard",
   "scripts": {
     "dev:backend": "npm --prefix backend run dev",
-    "dev:frontend": "npm --prefix frontend run dev",
-    "build": "npm --prefix backend run build && npm --prefix frontend run build",
+    "dev:user-frontend": "npm --prefix user-frontend run dev",
+    "dev:frontend": "npm --prefix user-frontend run dev",
+    "dev:admin": "npm --prefix admin-panel run dev",
+    "build:backend": "npm --prefix backend run build",
+    "build:frontend": "npm --prefix user-frontend run build",
+    "build:admin": "npm --prefix admin-panel run build",
+    "build": "npm run build:backend && npm run build:frontend && npm run build:admin",
     "test:backend": "npm --prefix backend test"
   }
 }

@@ -8,12 +8,14 @@ if (typeof globalThis.WebSocket === "undefined") {
 import app from "./app.js";
 import { config } from "./config/index.js";
 import { logger } from "./utils/logger.js";
+import { connectPrisma } from "./config/prisma.js";
 
-const server = app.listen(config.port, () => {
+const server = app.listen(config.port, async () => {
   logger.info(`✨ JEWELAI Backend Server running on port ${config.port} [${config.env}]`);
   logger.info(`🔗 Health Check: http://localhost:${config.port}/api/health`);
   logger.info(`📦 Active Storage: ${config.storage.provider}`);
   logger.info(`🤖 Configured Gemini Model: ${config.gemini.imageModel}`);
+  await connectPrisma();
 });
 
 // Graceful shutdown handling

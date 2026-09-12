@@ -170,6 +170,40 @@ export class TryOnService {
       record.updatedAt = new Date().toISOString();
       memoryGenerationStore.set(generationId, record);
 
+      // 10. Persist to database & deduct 1 credit
+      if (process.env.DATABASE_URL && userId && userId !== "anonymous") {
+        try {
+          const { prisma } = await import("../config/prisma.js");
+          await prisma.generationUsage.create({
+            data: {
+              id: generationId,
+              userId,
+              category: categoryName,
+              mode: input.mode || "custom-model",
+              modelConfig: input.modelConfig ? (input.modelConfig as any) : undefined,
+              prompt,
+              inputModelUrl: storedModelUrl || undefined,
+              inputJewelryUrl: storedJewelry.url,
+              outputImageUrl: storedGenerated.url,
+              status: "success",
+              creditsUsed: 1,
+            },
+          });
+        } catch (dbErr) {
+          logger.warn({ dbErr }, "Failed to write generation usage to database");
+        }
+      } else if (userId && userId !== "anonymous") {
+        try {
+          const { mockStore } = await import("../mock/mockStore.js");
+          const user = mockStore.users.find((u) => u.id === userId);
+          if (user) {
+            user.totalGenerations = (user.totalGenerations || 0) + 1;
+          }
+        } catch (mockErr) {
+          logger.warn({ mockErr }, "Failed to update mock store generation count");
+        }
+      }
+
       logger.info(
         { generationId, durationMs, status: "completed" },
         "Virtual try-on generation successfully completed"
@@ -180,7 +214,7 @@ export class TryOnService {
         category: input.category,
         categoryName,
         imageUrl: storedGenerated.url,
-        modelImageUrl: storedModel.url,
+        modelImageUrl: storedModelUrl,
         jewelryImageUrl: storedJewelry.url,
         background,
         aspectRatio,
@@ -194,6 +228,24 @@ export class TryOnService {
       record.errorMessage = (err as Error)?.message || "Unknown error";
       record.updatedAt = new Date().toISOString();
       memoryGenerationStore.set(generationId, record);
+
+      // Log failure in database with 0 credits consumed
+      if (process.env.DATABASE_URL && userId && userId !== "anonymous") {
+        try {
+          const { prisma } = await import("../config/prisma.js");
+          await prisma.generationUsage.create({
+            data: {
+              id: generationId,
+              userId,
+              category: categoryName,
+              mode: input.mode || "custom-model",
+              outputImageUrl: "",
+              status: "failed",
+              creditsUsed: 0,
+            },
+          });
+        } catch {}
+      }
 
       logger.error({ generationId, err }, "Virtual try-on generation failed");
       throw err;
