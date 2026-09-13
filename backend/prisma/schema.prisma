@@ -1,6 +1,7 @@
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -27,10 +28,29 @@ enum VerificationStatus {
   rejected
 }
 
+model Admin {
+  id                    String                 @id @default(uuid())
+  email                 String                 @unique
+  name                  String?
+  firstName             String?
+  lastName              String?
+  phoneNumber           String?
+  passwordHash          String
+  role                  Role                   @default(ADMIN)
+  forcePasswordChange   Boolean                @default(false)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  auditLogs             AuditLog[]             @relation("AdminAuditLogs")
+}
+
 model User {
   id                    String                 @id @default(uuid())
   email                 String                 @unique
   name                  String?
+  firstName             String?
+  lastName              String?
+  phoneNumber           String?
   passwordHash          String?
   role                  Role                   @default(USER)
   forcePasswordChange   Boolean                @default(false)
@@ -41,7 +61,6 @@ model User {
   paymentVerifications  PaymentVerification[]
   generationUsages      GenerationUsage[]
   notifications         Notification[]
-  auditLogsAsAdmin      AuditLog[]             @relation("AdminAuditLogs")
 }
 
 model MembershipPlan {
@@ -148,7 +167,7 @@ model AuditLog {
   ipAddress             String?
   createdAt             DateTime               @default(now())
 
-  admin                 User                   @relation("AdminAuditLogs", fields: [adminId], references: [id], onDelete: Cascade)
+  admin                 Admin                  @relation("AdminAuditLogs", fields: [adminId], references: [id], onDelete: Cascade)
 
   @@index([adminId])
   @@index([action])

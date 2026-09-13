@@ -4,8 +4,15 @@ import { authService } from "./auth.service.js";
 export class AuthController {
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { email, password, name } = req.body;
-      const result = await authService.register({ email, password, name });
+      const { email, password, name, firstName, lastName, phoneNumber, phone } = req.body;
+      const result = await authService.register({
+        email,
+        password,
+        name,
+        firstName,
+        lastName,
+        phoneNumber: phoneNumber || phone,
+      });
       res.status(201).json({
         success: true,
         data: result,

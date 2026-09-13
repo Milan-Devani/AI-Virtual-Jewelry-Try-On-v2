@@ -90,19 +90,28 @@ export async function requireAuth(
           userRole = dbUser.role as "USER" | "ADMIN";
           email = dbUser.email;
           userName = dbUser.name;
-        } else if (email) {
-          // If user exists in Supabase Auth but not yet in Prisma, auto-sync
-          const created = await prisma.user.upsert({
-            where: { email },
-            update: {},
-            create: {
-              id: userId,
-              email,
-              name: userName,
-              role: userRole,
-            },
+        } else {
+          const dbAdmin = await (prisma as any).admin.findUnique({
+            where: { id: userId },
           });
-          userRole = created.role as "USER" | "ADMIN";
+          if (dbAdmin) {
+            userRole = "ADMIN";
+            email = dbAdmin.email;
+            userName = dbAdmin.name;
+          } else if (email) {
+            // If user exists in Supabase Auth but not yet in Prisma, auto-sync
+            const created = await prisma.user.upsert({
+              where: { email },
+              update: {},
+              create: {
+                id: userId,
+                email,
+                name: userName,
+                role: userRole,
+              },
+            });
+            userRole = created.role as "USER" | "ADMIN";
+          }
         }
       }
     } catch (dbErr) {

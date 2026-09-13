@@ -2,6 +2,9 @@ export interface MockUser {
   id: string;
   email: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
   role: "ADMIN" | "USER";
   createdAt: Date;
   hasActivePlan: boolean;
@@ -109,6 +112,9 @@ class MockDataStore {
       id: "usr-demo-1",
       email: "ananya.sharma@tanishq-partner.com",
       name: "Ananya Sharma",
+      firstName: "Ananya",
+      lastName: "Sharma",
+      phoneNumber: "+91 98765 43210",
       role: "USER",
       createdAt: new Date(Date.now() - 86400000 * 5),
       hasActivePlan: true,
@@ -123,6 +129,9 @@ class MockDataStore {
       id: "usr-demo-2",
       email: "rahul.mehta@heritagejewels.in",
       name: "Rahul Mehta",
+      firstName: "Rahul",
+      lastName: "Mehta",
+      phoneNumber: "+91 98234 56789",
       role: "USER",
       createdAt: new Date(Date.now() - 86400000 * 3),
       hasActivePlan: false,
@@ -137,6 +146,9 @@ class MockDataStore {
       id: "usr-demo-3",
       email: "priya.nair@kalyanjewellers-demo.com",
       name: "Priya Nair",
+      firstName: "Priya",
+      lastName: "Nair",
+      phoneNumber: "+91 97123 45678",
       role: "USER",
       createdAt: new Date(Date.now() - 86400000 * 12),
       hasActivePlan: true,
@@ -151,6 +163,9 @@ class MockDataStore {
       id: "usr-demo-4",
       email: "vikram.patel@zoya-studio.com",
       name: "Vikram Patel",
+      firstName: "Vikram",
+      lastName: "Patel",
+      phoneNumber: "+91 99012 34567",
       role: "USER",
       createdAt: new Date(Date.now() - 86400000 * 20),
       hasActivePlan: false,
@@ -165,6 +180,9 @@ class MockDataStore {
       id: "admin-default-id",
       email: "admin@jewelai.com",
       name: "System Administrator",
+      firstName: "System",
+      lastName: "Administrator",
+      phoneNumber: "+91 98000 00000",
       role: "ADMIN",
       createdAt: new Date(Date.now() - 86400000 * 30),
       hasActivePlan: true,

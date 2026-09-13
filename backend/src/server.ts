@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config({ override: true });
+
 import WebSocket from "ws";
 
 // Polyfill global WebSocket for environments without native global.WebSocket

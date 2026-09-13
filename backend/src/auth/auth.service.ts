@@ -8,11 +8,35 @@ import { AuthenticationError, ValidationError } from "../utils/errors.js";
 import { logger } from "../utils/logger.js";
 
 export class AuthService {
-  async register(data: { email: string; password: string; name?: string }) {
-    const email = data.email.toLowerCase().trim();
+  async register(data: {
+    email: string;
+    password: string;
+    name?: string;
+    firstName?: string;
+    lastName?: string;
+    phoneNumber?: string;
+  }) {
+    const email = data.email?.toLowerCase().trim();
     if (!email || !data.password || data.password.length < 6) {
       throw new ValidationError("Valid email and password (minimum 6 characters) are required.");
     }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new ValidationError("Please provide a valid email address.");
+    }
+
+    const firstName = data.firstName?.trim() || "";
+    const lastName = data.lastName?.trim() || "";
+    const phoneNumber = data.phoneNumber?.trim() || undefined;
+
+    // Backward compatibility: maintain composite name for legacy callers / UI
+    let fullName = data.name?.trim();
+    if (!fullName) {
+      fullName = [firstName, lastName].filter(Boolean).join(" ") || email.split("@")[0];
+    }
+    const resolvedFirstName = firstName || (fullName ? fullName.split(" ")[0] : "");
+    const resolvedLastName = lastName || (fullName ? fullName.split(" ").slice(1).join(" ") : "");
 
     // Offline / Mock development fallback when DATABASE_URL is not set
     if (!process.env.DATABASE_URL) {
@@ -23,7 +47,10 @@ export class AuthService {
       const newUser: MockUser = {
         id: `usr-${Date.now()}`,
         email,
-        name: data.name || email.split("@")[0],
+        name: fullName,
+        firstName: resolvedFirstName || undefined,
+        lastName: resolvedLastName || undefined,
+        phoneNumber: phoneNumber || undefined,
         role: "USER",
         createdAt: new Date(),
         hasActivePlan: false,
@@ -46,6 +73,9 @@ export class AuthService {
           id: newUser.id,
           email: newUser.email,
           name: newUser.name,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
+          phoneNumber: newUser.phoneNumber,
           role: newUser.role,
         },
         token,
@@ -60,7 +90,13 @@ export class AuthService {
           email,
           password: data.password,
           email_confirm: true,
-          user_metadata: { name: data.name || "", role: "USER" },
+          user_metadata: {
+            name: fullName,
+            firstName: resolvedFirstName,
+            lastName: resolvedLastName,
+            phoneNumber: phoneNumber,
+            role: "USER",
+          },
         });
         if (!sbError && sbData.user) {
           supabaseUserId = sbData.user.id;
@@ -72,9 +108,10 @@ export class AuthService {
       }
     }
 
-    // 2. Check if user already exists in DB
+    // 2. Check if user already exists in DB (User or Admin table)
     const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
+    const existingAdmin = await (prisma as any).admin.findUnique({ where: { email } });
+    if (existing || existingAdmin) {
       throw new ValidationError("An account with this email already exists.");
     }
 
@@ -86,7 +123,10 @@ export class AuthService {
       data: {
         id: supabaseUserId || undefined,
         email,
-        name: data.name || email.split("@")[0],
+        name: fullName,
+        firstName: resolvedFirstName || undefined,
+        lastName: resolvedLastName || undefined,
+        phoneNumber: phoneNumber || undefined,
         passwordHash,
         role: "USER",
       },
@@ -104,6 +144,9 @@ export class AuthService {
         id: user.id,
         email: user.email,
         name: user.name,
+        firstName: user.firstName || resolvedFirstName,
+        lastName: user.lastName || resolvedLastName,
+        phoneNumber: user.phoneNumber || phoneNumber,
         role: user.role,
       },
       token,
@@ -111,9 +154,14 @@ export class AuthService {
   }
 
   async login(data: { email: string; password: string }) {
-    const email = data.email.toLowerCase().trim();
+    const email = data.email?.toLowerCase().trim();
     if (!email || !data.password) {
       throw new ValidationError("Email and password are required.");
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new ValidationError("Please provide a valid email address (e.g. name@gmail.com).");
     }
 
     // Offline / Mock development fallback when DATABASE_URL is not set
@@ -134,6 +182,9 @@ export class AuthService {
             id: adminUser.id,
             email: adminUser.email,
             name: adminUser.name,
+            firstName: adminUser.firstName,
+            lastName: adminUser.lastName,
+            phoneNumber: adminUser.phoneNumber,
             role: adminUser.role,
             forcePasswordChange: false,
             activeSubscription: {
@@ -183,6 +234,9 @@ export class AuthService {
           id: mockUser.id,
           email: mockUser.email,
           name: mockUser.name,
+          firstName: mockUser.firstName,
+          lastName: mockUser.lastName,
+          phoneNumber: mockUser.phoneNumber,
           role: mockUser.role,
           forcePasswordChange: false,
           activeSubscription: mockUser.hasActivePlan
@@ -202,6 +256,50 @@ export class AuthService {
       };
     }
 
+    // 1. Check if user is in the dedicated Admin table
+    const admin = await (prisma as any).admin.findUnique({
+      where: { email },
+    });
+
+    if (admin && admin.passwordHash) {
+      const isMatch = await bcrypt.compare(data.password, admin.passwordHash);
+      if (!isMatch) {
+        throw new AuthenticationError("Invalid email or password.");
+      }
+
+      const token = this.generateToken({
+        id: admin.id,
+        email: admin.email,
+        role: "ADMIN",
+        name: admin.name,
+      });
+
+      return {
+        user: {
+          id: admin.id,
+          email: admin.email,
+          name: admin.name,
+          firstName: admin.firstName,
+          lastName: admin.lastName,
+          phoneNumber: admin.phoneNumber,
+          role: "ADMIN",
+          forcePasswordChange: admin.forcePasswordChange,
+          activeSubscription: {
+            id: "sub-admin-vip",
+            status: "active",
+            plan: {
+              id: "plan-business",
+              name: "Administrator VIP",
+              price: 0,
+              generationLimit: 99999,
+            },
+          },
+        },
+        token,
+      };
+    }
+
+    // 2. Otherwise check customer accounts in the User table
     const user = await prisma.user.findUnique({
       where: { email },
       include: {
@@ -236,6 +334,9 @@ export class AuthService {
         id: user.id,
         email: user.email,
         name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phoneNumber: user.phoneNumber,
         role: user.role,
         forcePasswordChange: user.forcePasswordChange,
         activeSubscription: activeSub,
@@ -266,6 +367,9 @@ export class AuthService {
           id: mockUser.id,
           email: mockUser.email,
           name: mockUser.name,
+          firstName: mockUser.firstName,
+          lastName: mockUser.lastName,
+          phoneNumber: mockUser.phoneNumber,
           role: mockUser.role,
           createdAt: mockUser.createdAt,
         },
@@ -322,6 +426,45 @@ export class AuthService {
     });
 
     if (!user) {
+      const admin = await (prisma as any).admin.findUnique({ where: { id: userId } });
+      if (admin) {
+        return {
+          user: {
+            id: admin.id,
+            email: admin.email,
+            name: admin.name,
+            firstName: admin.firstName,
+            lastName: admin.lastName,
+            phoneNumber: admin.phoneNumber,
+            role: "ADMIN",
+            createdAt: admin.createdAt,
+          },
+          subscription: {
+            id: "sub-admin-vip",
+            status: "active",
+            plan: {
+              id: "plan-business",
+              name: "Administrator VIP",
+              price: 0,
+              generationLimit: 99999,
+            },
+          },
+          membership: {
+            status: "active",
+            plan: {
+              id: "plan-business",
+              name: "Administrator VIP",
+              generationLimit: 99999,
+            },
+            totalCredits: 99999,
+            usedCredits: 0,
+            remainingCredits: 99999,
+            isActive: true,
+          },
+          recentPayments: [],
+          notifications: [],
+        };
+      }
       throw new AuthenticationError("User not found.");
     }
 
@@ -352,6 +495,9 @@ export class AuthService {
         id: user.id,
         email: user.email,
         name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phoneNumber: user.phoneNumber,
         role: user.role,
         createdAt: user.createdAt,
       },

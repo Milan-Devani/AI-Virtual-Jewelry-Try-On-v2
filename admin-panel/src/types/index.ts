@@ -1,6 +1,9 @@
 export interface AdminUser {
   id: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
   email: string;
   role: "USER" | "ADMIN";
   status: "active" | "pending_verification" | "expired" | "rejected" | "no_plan";

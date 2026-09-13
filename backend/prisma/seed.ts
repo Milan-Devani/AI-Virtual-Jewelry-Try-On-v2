@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config({ override: true });
+
 import { PrismaClient, Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
@@ -90,21 +93,65 @@ async function main() {
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash(defaultPassword, salt);
 
-  const adminUser = await prisma.user.upsert({
+  const adminUser = await (prisma as any).admin.upsert({
     where: { email: adminEmail },
     update: {
+      passwordHash,
       role: Role.ADMIN,
     },
     create: {
       email: adminEmail,
       name: "JEWELAI Administrator",
+      firstName: "System",
+      lastName: "Administrator",
+      phoneNumber: "+91 98000 00000",
       passwordHash,
       role: Role.ADMIN,
       forcePasswordChange: true,
     },
   });
 
-  console.log(`✅ Seeded Admin: ${adminUser.email} (Role: ${adminUser.role})`);
+  console.log(`✅ Seeded Admin: ${adminUser.email} (Role: ${adminUser.role}) into Admin table`);
+
+  // 3. Seed Demo User with Active Subscription
+  const demoEmail = "ananya.sharma@tanishq-partner.com";
+  const demoUser = await prisma.user.upsert({
+    where: { email: demoEmail },
+    update: {},
+    create: {
+      id: "usr-demo-1",
+      email: demoEmail,
+      name: "Ananya Sharma",
+      firstName: "Ananya",
+      lastName: "Sharma",
+      phoneNumber: "+91 98765 43210",
+      passwordHash,
+      role: Role.USER,
+    },
+  });
+
+  const professionalPlan = await prisma.membershipPlan.findUnique({
+    where: { slug: "professional" },
+  });
+
+  if (professionalPlan) {
+    const existingSub = await prisma.subscription.findFirst({
+      where: { userId: demoUser.id },
+    });
+    if (!existingSub) {
+      await prisma.subscription.create({
+        data: {
+          userId: demoUser.id,
+          planId: professionalPlan.id,
+          status: "active",
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+      });
+      console.log(`✅ Seeded active subscription for ${demoUser.email}`);
+    }
+  }
+
   console.log("🚀 Database seeding completed successfully!");
 }
 

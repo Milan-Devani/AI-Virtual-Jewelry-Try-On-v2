@@ -196,7 +196,12 @@ export const Users: React.FC = () => {
                 ) : (
                   users.map((u) => (
                     <tr key={u.id} className="hover:bg-slate-850/40 transition-colors">
-                      <td className="py-4 px-6 font-semibold text-slate-200">{u.name}</td>
+                      <td className="py-4 px-6 font-semibold text-slate-200">
+                        <div>{u.name}</div>
+                        {u.phoneNumber && (
+                          <div className="text-xs font-normal text-slate-400 mt-0.5 font-mono">{u.phoneNumber}</div>
+                        )}
+                      </td>
                       <td className="py-4 px-6 font-mono text-slate-400">{u.email}</td>
                       <td className="py-4 px-6">
                         <StatusBadge status={u.status} />
@@ -267,7 +272,10 @@ export const Users: React.FC = () => {
                 <h3 className="font-serif text-xl font-bold text-slate-100">
                   {selectedUserDetails?.name || "User Details"}
                 </h3>
-                <p className="text-xs font-mono text-slate-400">{selectedUserDetails?.email}</p>
+                <p className="text-xs font-mono text-slate-400">
+                  {selectedUserDetails?.email}
+                  {selectedUserDetails?.phoneNumber && ` • ${selectedUserDetails.phoneNumber}`}
+                </p>
               </div>
               <button
                 onClick={() => setSelectedUserId(null)}

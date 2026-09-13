@@ -220,6 +220,9 @@ export class AdminService {
       return {
         id: u.id,
         name: u.name || "Anonymous",
+        firstName: u.firstName,
+        lastName: u.lastName,
+        phoneNumber: u.phoneNumber,
         email: u.email,
         role: u.role,
         status, // "active" | "pending_verification" | "expired" | "rejected" | "no_plan"
@@ -250,6 +253,9 @@ export class AdminService {
       return {
         id: user.id,
         name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phoneNumber: user.phoneNumber,
         email: user.email,
         role: user.role,
         createdAt: user.createdAt,

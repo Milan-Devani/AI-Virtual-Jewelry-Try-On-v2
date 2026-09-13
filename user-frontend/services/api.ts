@@ -130,7 +130,14 @@ export async function generateTryOnApi(
 }
 
 // ==================== AUTH APIS ====================
-export async function registerApi(payload: { email: string; password: string; name?: string }) {
+export async function registerApi(payload: {
+  email: string;
+  password: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+}) {
   const res = await fetch(`${API_BASE_URL}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
