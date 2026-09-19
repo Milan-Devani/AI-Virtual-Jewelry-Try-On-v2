@@ -48,6 +48,33 @@ export class AdminController {
     }
   }
 
+  async updateUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const adminId = req.user!.id;
+      const { firstName, lastName, name, email, phoneNumber, planId } = req.body;
+      const updatedUser = await adminService.updateUser(
+        id,
+        { firstName, lastName, name, email, phoneNumber, planId },
+        adminId
+      );
+      res.status(200).json({ success: true, data: updatedUser, message: "User updated successfully" });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async deleteUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const adminId = req.user!.id;
+      const result = await adminService.deleteUser(id, adminId);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async grantMembership(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;

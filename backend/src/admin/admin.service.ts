@@ -1,6 +1,6 @@
 import { prisma } from "../config/prisma.js";
 import { mockStore } from "../mock/mockStore.js";
-import { AppError } from "../utils/errors.js";
+import { AppError, ValidationError, NotFoundError } from "../utils/errors.js";
 import { auditService } from "./audit.service.js";
 
 export class AdminService {
@@ -314,6 +314,195 @@ export class AdminService {
     return usages;
   }
 
+  async updateUser(
+    userId: string,
+    data: {
+      firstName?: string;
+      lastName?: string;
+      name?: string;
+      email?: string;
+      phoneNumber?: string;
+      planId?: string;
+    },
+    adminId: string
+  ) {
+    if (data.email) {
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(data.email.trim())) {
+        throw new ValidationError("Please provide a valid email address.", "INVALID_SETTINGS");
+      }
+    }
+
+    let computedName = data.name;
+    if (!computedName && (data.firstName || data.lastName)) {
+      computedName = [data.firstName, data.lastName].filter(Boolean).join(" ");
+    }
+
+    if (!process.env.DATABASE_URL) {
+      const user = mockStore.users.find((u) => u.id === userId);
+      if (!user) throw new NotFoundError("User not found.");
+
+      if (data.email && data.email.toLowerCase() !== user.email.toLowerCase()) {
+        const emailExists = mockStore.users.some(
+          (u) => u.id !== userId && u.email.toLowerCase() === data.email!.toLowerCase()
+        );
+        if (emailExists) {
+          throw new ValidationError("Email address is already in use.", "INVALID_SETTINGS");
+        }
+        user.email = data.email.trim().toLowerCase();
+      }
+
+      if (computedName) user.name = computedName;
+      if (data.firstName !== undefined) user.firstName = data.firstName;
+      if (data.lastName !== undefined) user.lastName = data.lastName;
+      if (data.phoneNumber !== undefined) user.phoneNumber = data.phoneNumber;
+
+      if (data.planId !== undefined) {
+        if (data.planId === "none" || data.planId === "") {
+          user.hasActivePlan = false;
+          user.activePlanLabel = "FALSE";
+          user.planName = "None";
+          user.generationLimit = 0;
+        } else {
+          const plan = mockStore.plans.find((p) => p.id === data.planId);
+          if (plan) {
+            user.hasActivePlan = true;
+            user.activePlanLabel = "TRUE";
+            user.planName = plan.name;
+            user.generationLimit = plan.generationLimit;
+          }
+        }
+      }
+
+      await auditService.log({
+        adminId,
+        action: "USER_UPDATED",
+        targetId: userId,
+        targetType: "user",
+        details: { updatedFields: Object.keys(data), email: user.email },
+      });
+
+      return user;
+    }
+
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        subscriptions: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          include: { plan: true },
+        },
+      },
+    });
+
+    if (!existingUser) {
+      throw new NotFoundError("User not found.");
+    }
+
+    if (data.email && data.email.toLowerCase() !== existingUser.email.toLowerCase()) {
+      const targetEmail = data.email.trim().toLowerCase();
+      const [existingUserEmail, existingAdminEmail] = await Promise.all([
+        prisma.user.findUnique({ where: { email: targetEmail } }),
+        (prisma as any).admin.findUnique({ where: { email: targetEmail } }),
+      ]);
+
+      if (existingUserEmail || existingAdminEmail) {
+        throw new ValidationError("Email address is already in use by another account.", "INVALID_SETTINGS");
+      }
+    }
+
+    const updatePayload: any = {};
+    if (data.email) updatePayload.email = data.email.trim().toLowerCase();
+    if (computedName) updatePayload.name = computedName;
+    if (data.firstName !== undefined) updatePayload.firstName = data.firstName;
+    if (data.lastName !== undefined) updatePayload.lastName = data.lastName;
+    if (data.phoneNumber !== undefined) updatePayload.phoneNumber = data.phoneNumber;
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: updatePayload,
+      include: {
+        subscriptions: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          include: { plan: true },
+        },
+      },
+    });
+
+    if (data.planId !== undefined) {
+      if (data.planId === "none" || data.planId === "") {
+        await this.revokeMembership(
+          userId,
+          adminId,
+          "Plan removed by administrator during user profile edit"
+        );
+      } else {
+        await this.grantMembership({
+          userId,
+          planId: data.planId,
+          durationDays: 30,
+          adminId,
+        });
+      }
+    }
+
+    await auditService.log({
+      adminId,
+      action: "USER_UPDATED",
+      targetId: userId,
+      targetType: "user",
+      details: { updatedFields: Object.keys(data), email: updatedUser.email },
+    });
+
+    return updatedUser;
+  }
+
+  async deleteUser(userId: string, adminId: string) {
+    if (!process.env.DATABASE_URL) {
+      const idx = mockStore.users.findIndex((u) => u.id === userId);
+      if (idx === -1) throw new NotFoundError("User not found.");
+      const removed = mockStore.users.splice(idx, 1)[0];
+      mockStore.verifications = mockStore.verifications.filter((v) => v.userId !== userId);
+
+      await auditService.log({
+        adminId,
+        action: "USER_DELETED",
+        targetId: userId,
+        targetType: "user",
+        details: { userId, email: removed.email },
+      });
+
+      return { success: true, message: "User deleted successfully" };
+    }
+
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!existingUser) {
+      throw new NotFoundError("User not found.");
+    }
+
+    await prisma.$transaction([
+      prisma.notification.deleteMany({ where: { userId } }),
+      prisma.generationUsage.deleteMany({ where: { userId } }),
+      prisma.paymentVerification.deleteMany({ where: { userId } }),
+      prisma.subscription.deleteMany({ where: { userId } }),
+      prisma.user.delete({ where: { id: userId } }),
+    ]);
+
+    await auditService.log({
+      adminId,
+      action: "USER_DELETED",
+      targetId: userId,
+      targetType: "user",
+      details: { email: existingUser.email, name: existingUser.name },
+    });
+
+    return { success: true, message: "User deleted successfully" };
+  }
 
   async grantMembership(params: {
     userId: string;

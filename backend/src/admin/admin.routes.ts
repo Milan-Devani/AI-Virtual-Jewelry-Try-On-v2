@@ -15,6 +15,8 @@ router.get("/dashboard", (req, res, next) => adminController.getDashboard(req, r
 // Users management
 router.get("/users", (req, res, next) => adminController.getUsers(req, res, next));
 router.get("/users/:id", (req, res, next) => adminController.getUserDetail(req, res, next));
+router.patch("/users/:id", (req, res, next) => adminController.updateUser(req, res, next));
+router.delete("/users/:id", (req, res, next) => adminController.deleteUser(req, res, next));
 router.get("/users/:id/usage", (req, res, next) => adminController.getUserUsage(req, res, next));
 router.post("/users/:id/grant-membership", (req, res, next) =>
   adminController.grantMembership(req, res, next)

@@ -130,6 +130,36 @@ describe("Auth & Membership Endpoints", () => {
   });
 
   it("POST /api/try-on passes membership check for user with active membership (usr-demo-1)", async () => {
+    if (process.env.DATABASE_URL) {
+      const { prisma } = await import("../src/config/prisma.js");
+      const plan = await prisma.membershipPlan.findFirst();
+      if (plan) {
+        await prisma.user.upsert({
+          where: { id: "usr-demo-1" },
+          update: {},
+          create: {
+            id: "usr-demo-1",
+            email: "ananya.sharma@tanishq-partner.com",
+            name: "Ananya Sharma",
+            passwordHash: "hash",
+            role: "USER",
+          },
+        });
+        const existingSub = await prisma.subscription.findFirst({ where: { userId: "usr-demo-1", status: "active" } });
+        if (!existingSub) {
+          await prisma.subscription.create({
+            data: {
+              userId: "usr-demo-1",
+              planId: plan.id,
+              status: "active",
+              currentPeriodStart: new Date(),
+              currentPeriodEnd: new Date(Date.now() + 86400000 * 30),
+            },
+          });
+        }
+      }
+    }
+
     const demoUserToken = authService.generateToken({
       id: "usr-demo-1",
       email: "ananya.sharma@tanishq-partner.com",

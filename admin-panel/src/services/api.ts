@@ -107,6 +107,29 @@ export async function revokeMembershipApi(userId: string, reason?: string) {
   });
 }
 
+export async function updateUserApi(
+  userId: string,
+  payload: {
+    firstName?: string;
+    lastName?: string;
+    name?: string;
+    email?: string;
+    phoneNumber?: string;
+    planId?: string;
+  }
+): Promise<any> {
+  return fetchWithAuth(`/admin/users/${userId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteUserApi(userId: string): Promise<any> {
+  return fetchWithAuth(`/admin/users/${userId}`, {
+    method: "DELETE",
+  });
+}
+
 // Verifications & Payments
 export async function getPendingVerificationsApi(): Promise<PaymentVerification[]> {
   return fetchWithAuth("/admin/payments/verifications");
