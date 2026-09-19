@@ -3,7 +3,9 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 COPY package*.json tsconfig*.json ./
+COPY prisma ./prisma
 RUN npm install
+RUN npx prisma generate
 
 COPY src ./src
 COPY tests ./tests
@@ -17,7 +19,9 @@ ENV NODE_ENV=production
 ENV PORT=10000
 
 COPY package*.json ./
+COPY prisma ./prisma
 RUN npm install --omit=dev
+RUN npx prisma generate
 
 COPY --from=builder /app/dist ./dist
 
