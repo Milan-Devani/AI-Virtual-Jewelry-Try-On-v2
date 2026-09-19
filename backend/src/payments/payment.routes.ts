@@ -21,7 +21,7 @@ router.get("/upi-details/:planId", requireAuth, (req, res, next) =>
 router.post(
   "/submit-verification",
   requireAuth,
-  upload.single("screenshot"),
+  upload.single("screenshot") as any,
   (req, res, next) => paymentController.submitVerification(req, res, next)
 );
 

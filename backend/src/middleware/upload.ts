@@ -25,9 +25,9 @@ export const uploadMiddleware = multer({
   },
 });
 
-export const tryOnUpload = uploadMiddleware.fields([
+export const tryOnUpload: any = uploadMiddleware.fields([
   { name: "modelImage", maxCount: 1 },
   { name: "jewelryImage", maxCount: 1 },
 ]);
 
-export const singleImageUpload = uploadMiddleware.single("image");
+export const singleImageUpload: any = uploadMiddleware.single("image");
