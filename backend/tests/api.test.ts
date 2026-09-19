@@ -10,6 +10,7 @@ const adminToken = authService.generateToken({
   name: "Test Admin",
 });
 
+
 const userToken = authService.generateToken({
   id: "test-user-id",
   email: "user@jewelai.com",
