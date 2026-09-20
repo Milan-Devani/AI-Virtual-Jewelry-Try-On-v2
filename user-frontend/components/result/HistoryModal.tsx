@@ -4,7 +4,7 @@ import { GenerationRecord } from "../../types";
 import { fetchHistoryApi, deleteHistoryApi, normalizeMediaUrl } from "../../services/api";
 import { JEWELRY_CATEGORIES } from "../../constants/categories";
 import { generateDownloadFilename } from "../../lib/utils";
-import { Trash2, Download, ExternalLink, RefreshCw, Sparkles, FolderOpen } from "lucide-react";
+import { Trash2, Download, ExternalLink, RefreshCw, Sparkles, FolderOpen, Film } from "lucide-react";
 import { toast } from "sonner";
 import { showSweetConfirm, showSweetToast } from "../../lib/sweetalert";
 
@@ -188,6 +188,19 @@ export function HistoryModal({
                     <div className="flex items-center gap-2">
                       {item.generatedImageUrl && (
                         <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (onSelectRecord) {
+                                onSelectRecord(item);
+                              }
+                            }}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-[#1A1715] bg-[#EFE6D8] border border-[#D8C7B0] px-2.5 py-1 rounded-lg hover:bg-[#E3D7C5] transition-all shadow-xs"
+                            title="Load into Studio to create AI Runway Video"
+                          >
+                            <Film className="w-3 h-3 text-[#B38541]" />
+                            <span>AI Video &amp; Edit</span>
+                          </button>
                           <button
                             type="button"
                             onClick={() => window.open(normalizeMediaUrl(item.generatedImageUrl), "_blank")}

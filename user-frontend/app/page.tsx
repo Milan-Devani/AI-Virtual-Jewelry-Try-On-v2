@@ -26,7 +26,7 @@ import {
 } from "../types";
 import { generateTryOnApi, ApiErrorWithDetails } from "../services/api";
 import { JEWELRY_CATEGORIES } from "../constants/categories";
-import { Sparkles, AlertTriangle, ArrowRight, Camera, Wand2 } from "lucide-react";
+import { Sparkles, AlertTriangle, ArrowRight, Camera, Wand2, Film } from "lucide-react";
 import { toast } from "sonner";
 import { showSweetTryOnReady, showSweetToast } from "../lib/sweetalert";
 import { cn } from "../lib/utils";
@@ -124,6 +124,28 @@ export default function TryOnWorkspacePage() {
   const [generationError, setGenerationError] = React.useState<string | null>(null);
   const [result, setResult] = React.useState<TryOnGenerationResult | null>(null);
 
+  // Restore latest try-on result from session so browser refreshes don't lose the workspace result
+  React.useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("jewelai_active_tryon_result");
+      if (saved) {
+        setResult(JSON.parse(saved));
+      }
+    } catch {}
+  }, []);
+
+  // Save result to session on update
+  const handleUpdateResult = (newResult: TryOnGenerationResult | null) => {
+    setResult(newResult);
+    try {
+      if (newResult) {
+        sessionStorage.setItem("jewelai_active_tryon_result", JSON.stringify(newResult));
+      } else {
+        sessionStorage.removeItem("jewelai_active_tryon_result");
+      }
+    } catch {}
+  };
+
   // Scroll to result on success
   const resultRef = React.useRef<HTMLDivElement>(null);
 
@@ -180,7 +202,7 @@ export default function TryOnWorkspacePage() {
         imageSize,
       });
 
-      setResult(response);
+      handleUpdateResult(response);
       toast.success("AI virtual try-on generated successfully!", { icon: "💎" });
 
       // Trigger luxury SweetAlert celebration
@@ -273,6 +295,17 @@ export default function TryOnWorkspacePage() {
                     : "Upload model & jewelry references • Choose category & render"}
                 </p>
               </div>
+
+              {result && (
+                <button
+                  type="button"
+                  onClick={() => resultRef.current?.scrollIntoView({ behavior: "smooth" })}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#FBF3E4] to-[#F5E6CC] border border-[#D9C4A2] text-xs font-bold text-[#8C6428] hover:shadow-sm transition-all active:scale-95"
+                >
+                  <Film className="w-3.5 h-3.5 text-[#B38541]" />
+                  <span>View Result &amp; AI Video ↓</span>
+                </button>
+              )}
 
               {/* Mode Switcher Tabs */}
               <div className="flex items-center p-1 rounded-2xl bg-[#F0EBE3] border border-[#E4DCD0] shrink-0">
@@ -524,11 +557,13 @@ export default function TryOnWorkspacePage() {
           )}
 
           {result && (
-            <ResultSection
-              result={result}
-              onRegenerate={handleRegenerate}
-              isRegenerating={isGenerating}
-            />
+            <div ref={resultRef} className="pt-2">
+              <ResultSection
+                result={result}
+                onRegenerate={handleRegenerate}
+                isRegenerating={isGenerating}
+              />
+            </div>
           )}
         </div>
       </main>
@@ -600,6 +635,27 @@ export default function TryOnWorkspacePage() {
       <HistoryModal
         isOpen={isHistoryOpen}
         onClose={() => setIsHistoryOpen(false)}
+        onSelectRecord={(rec) => {
+          const tryonResult: TryOnGenerationResult = {
+            id: rec.id,
+            imageUrl: rec.generatedImageUrl || "",
+            modelImageUrl: rec.modelImageUrl,
+            jewelryImageUrl: rec.jewelryImageUrl,
+            category: rec.category,
+            categoryName: rec.category,
+            aspectRatio: (rec.aspectRatio as any) || "4:5",
+            background: rec.background || "studio",
+            imageSize: rec.imageSize || "2K",
+            createdAt: rec.createdAt,
+            durationMs: rec.durationMs,
+          };
+          handleUpdateResult(tryonResult);
+          setIsHistoryOpen(false);
+          toast.success("Loaded try-on into Studio workspace!", { icon: "🎬" });
+          setTimeout(() => {
+            resultRef.current?.scrollIntoView({ behavior: "smooth" });
+          }, 200);
+        }}
       />
 
       {/* Settings Modal */}

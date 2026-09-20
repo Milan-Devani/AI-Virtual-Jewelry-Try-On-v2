@@ -162,18 +162,30 @@ export function ResultSection({
             <span>Solo Result</span>
           </button>
 
-          {videoResult && (
+          {videoResult ? (
             <button
               type="button"
               onClick={() => setViewMode("video")}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 viewMode === "video"
-                  ? "bg-[#1A1715] text-[#D8B77E] shadow-sm"
+                  ? "bg-[#1A1715] text-[#D8B77E] shadow-sm font-bold"
                   : "text-[#736D66] hover:text-[#1A1715]"
               }`}
             >
               <Video className="w-3.5 h-3.5 text-[#D8B77E]" />
               <span>AI Video</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                const el = document.getElementById("ai-video-drawer");
+                el?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-[#8C6428] hover:bg-white/60 transition-all"
+            >
+              <Film className="w-3.5 h-3.5 text-[#B38541]" />
+              <span>Render AI Video</span>
             </button>
           )}
         </div>
@@ -232,7 +244,10 @@ export function ResultSection({
       </div>
 
       {/* AI Video Creator Drawer Banner */}
-      <div className="my-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#FCFBF8] via-[#FAF6EE] to-[#F5EFE3] border border-[#E6DBCA] shadow-sm">
+      <div
+        id="ai-video-drawer"
+        className="my-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#FCFBF8] via-[#FAF6EE] to-[#F5EFE3] border border-[#E6DBCA] shadow-sm"
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -287,7 +302,7 @@ export function ResultSection({
               className="flex items-center gap-2 bg-[#1A1715] hover:bg-[#2A2622] text-[#FBF9F5] border border-[#3E3832] px-4 font-bold text-xs"
             >
               <Video className="w-3.5 h-3.5 text-[#D8B77E]" />
-              <span>{isGeneratingVideo ? "Rendering..." : "Generate AI Video"}</span>
+              <span>{isGeneratingVideo ? "Rendering 1080p Video..." : "Render AI Runway Video"}</span>
             </Button>
           </div>
         </div>
