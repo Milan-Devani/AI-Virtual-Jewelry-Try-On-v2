@@ -23,6 +23,7 @@ getStorageProvider();
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginOpenerPolicy: false,
     contentSecurityPolicy: false,
   })
 );
@@ -115,7 +116,16 @@ app.use(express.urlencoded({ extended: true, limit: bodyLimit }));
 
 // Serve Local Uploads directory statically if using local storage
 const uploadsDir = path.join(process.cwd(), "uploads");
-app.use("/uploads", express.static(uploadsDir));
+app.use(
+  "/uploads",
+  express.static(uploadsDir, {
+    setHeaders: (res) => {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+      res.setHeader("Accept-Ranges", "bytes");
+    },
+  })
+);
 
 // Apply general rate limiter across API
 app.use("/api", generalLimiter);

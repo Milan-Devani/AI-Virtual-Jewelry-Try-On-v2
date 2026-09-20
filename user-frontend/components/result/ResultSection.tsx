@@ -190,8 +190,12 @@ export function ResultSection({
               loop
               muted
               playsInline
+              crossOrigin="anonymous"
               className="w-full h-full object-cover cursor-pointer"
               onClick={togglePlayVideo}
+              onError={(e) => {
+                console.error("Video load error for URL:", videoResult.videoUrl, e);
+              }}
             />
 
             {/* Video overlay controls */}

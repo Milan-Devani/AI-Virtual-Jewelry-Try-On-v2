@@ -83,14 +83,22 @@ export function clearAuthToken() {
 export function normalizeMediaUrl(url?: string | null): string {
   if (!url) return "";
 
+  const isLocal =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      window.location.hostname.endsWith(".local"));
+
   // Dynamic backend public URL
-  const backendBase = (
-    process.env.NEXT_PUBLIC_API_URL || "https://ai-virtual-jewelry-try-on.onrender.com/api"
-  ).replace(/\/api\/?$/, "");
+  const backendBase = isLocal
+    ? "http://localhost:4000"
+    : (
+        process.env.NEXT_PUBLIC_API_URL || "https://ai-virtual-jewelry-try-on.onrender.com/api"
+      ).replace(/\/api\/?$/, "");
 
   // If the backend generated a localhost:10000 or localhost:4000 URL
   if (url.startsWith("http://localhost:10000") || url.startsWith("http://localhost:4000")) {
-    if (typeof window !== "undefined" && window.location.hostname === "localhost") {
+    if (isLocal) {
       // Local development environment: ensure port 4000
       return url.replace("http://localhost:10000", "http://localhost:4000");
     }
