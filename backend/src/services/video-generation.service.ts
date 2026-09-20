@@ -89,7 +89,7 @@ export class VideoGenerationService {
       // Fetch image buffer
       const res = await fetch(input.imageUrl);
       if (!res.ok) {
-        throw new AppError(400, "FAILED_FETCH_IMAGE", `Could not fetch source image: ${res.statusText}`);
+        throw new AppError("INVALID_IMAGE", `Could not fetch source image: ${res.statusText}`, 400);
       }
       const buffer = await res.arrayBuffer();
       imagePayload = new Blob([buffer], { type: "image/jpeg" });
@@ -102,13 +102,13 @@ export class VideoGenerationService {
         imagePayload = new Blob([buffer], { type: "image/jpeg" });
         localImagePath = possiblePath;
       } catch (readErr) {
-        throw new AppError(400, "IMAGE_NOT_FOUND", `Local try-on image not found at ${cleanPath}`);
+        throw new AppError("NOT_FOUND", `Local try-on image not found at ${cleanPath}`, 404);
       }
     }
 
     const hfToken = config.video.hfToken || process.env.HF_TOKEN;
     if (!hfToken) {
-      throw new AppError(500, "MISSING_HF_TOKEN", "Hugging Face token (HF_TOKEN) is not configured in backend/.env");
+      throw new AppError("AI_PROVIDER_ERROR", "Hugging Face token (HF_TOKEN) is not configured in backend/.env", 500);
     }
 
     try {
@@ -172,7 +172,7 @@ export class VideoGenerationService {
       };
     } catch (err: any) {
       logger.error({ videoId, err: err.message }, "AI Video Try-On generation failed");
-      throw new AppError(502, "VIDEO_GENERATION_FAILED", `Failed to generate video: ${err.message}`);
+      throw new AppError("VIDEO_GENERATION_FAILED", `Failed to generate video: ${err.message}`, 502);
     }
   }
 }

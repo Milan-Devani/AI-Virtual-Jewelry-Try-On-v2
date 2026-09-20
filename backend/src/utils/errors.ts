@@ -20,6 +20,8 @@ export type ErrorCode =
   | "DUPLICATE_UTR"
   | "ALREADY_APPROVED"
   | "NOT_FOUND"
+  | "INVALID_VIDEO_PARAMS"
+  | "VIDEO_GENERATION_FAILED"
   | "INTERNAL_ERROR";
 
 export class AppError extends Error {
