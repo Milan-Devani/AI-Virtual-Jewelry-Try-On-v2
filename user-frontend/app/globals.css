@@ -42,3 +42,179 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Luxury Generation Animations */
+@keyframes laserSweep {
+  0% {
+    top: 0%;
+    opacity: 0.2;
+  }
+  50% {
+    top: 96%;
+    opacity: 0.9;
+  }
+  100% {
+    top: 0%;
+    opacity: 0.2;
+  }
+}
+
+@keyframes goldShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes orbitSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulseGoldGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(216, 183, 126, 0.2), 0 0 30px rgba(216, 183, 126, 0.1);
+    border-color: rgba(216, 183, 126, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(216, 183, 126, 0.45), 0 0 50px rgba(216, 183, 126, 0.2);
+    border-color: rgba(216, 183, 126, 0.8);
+  }
+}
+
+.animate-laser-sweep {
+  animation: laserSweep 3s ease-in-out infinite;
+}
+
+.animate-gold-shimmer {
+  background: linear-gradient(90deg, #D8B77E 0%, #FFF5E1 50%, #B38541 100%);
+  background-size: 200% 100%;
+  animation: goldShimmer 2.5s infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulseGoldGlow 2.5s ease-in-out infinite;
+}
+
+.animate-orbit {
+  animation: orbitSpin 12s linear infinite;
+}
+
+/* SweetAlert2 Luxury Jewelry Theme Overrides (Center Modals only) */
+.swal2-container:not(.swal2-top-end):not(.swal2-top-start):not(.swal2-bottom-end):not(.swal2-bottom-start) {
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  background-color: rgba(26, 23, 21, 0.45) !important;
+  z-index: 99999 !important;
+}
+
+.swal2-popup:not(.swal2-toast) {
+  border: 1px solid #E8DFC9 !important;
+  border-radius: 24px !important;
+  background: #FCFBF8 !important;
+  box-shadow: 0 25px 50px -12px rgba(26, 23, 21, 0.25) !important;
+  padding: 1.75rem !important;
+}
+
+.swal2-title {
+  color: #1A1715 !important;
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif !important;
+  font-size: 1.35rem !important;
+  font-weight: 700 !important;
+}
+
+.swal2-html-container {
+  color: #6B645D !important;
+  font-size: 0.875rem !important;
+  line-height: 1.6 !important;
+}
+
+.swal2-actions {
+  display: flex !important;
+  gap: 0.75rem !important;
+  margin-top: 1.5rem !important;
+  width: 100% !important;
+  justify-content: center !important;
+}
+
+/* Luxury Primary Confirm Button (High-contrast obsidian/gold) */
+.swal2-confirm,
+button.swal2-confirm {
+  background-color: #1A1715 !important;
+  background: #1A1715 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #3E3832 !important;
+  border-radius: 12px !important;
+  padding: 0.65rem 1.4rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.015em !important;
+  box-shadow: 0 4px 12px rgba(26, 23, 21, 0.2) !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 120px !important;
+}
+
+.swal2-confirm:hover,
+button.swal2-confirm:hover {
+  background-color: #2E2925 !important;
+  background: #2E2925 !important;
+  color: #D8B77E !important;
+  border-color: #D8B77E !important;
+  box-shadow: 0 6px 16px rgba(26, 23, 21, 0.3) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Luxury Secondary Cancel Button */
+.swal2-cancel,
+button.swal2-cancel {
+  background-color: #F4EFE7 !important;
+  background: #F4EFE7 !important;
+  color: #5A534B !important;
+  border: 1px solid #E2DBD1 !important;
+  border-radius: 12px !important;
+  padding: 0.65rem 1.4rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 120px !important;
+}
+
+.swal2-cancel:hover,
+button.swal2-cancel:hover {
+  background-color: #EBE5DC !important;
+  background: #EBE5DC !important;
+  color: #1A1715 !important;
+  border-color: #D8CEBE !important;
+}
+
+.swal2-icon.swal2-warning {
+  border-color: #D8B77E !important;
+  color: #D8B77E !important;
+}
+
+.swal2-icon.swal2-success {
+  border-color: #D8B77E !important;
+  color: #D8B77E !important;
+}
+
+.swal2-icon.swal2-success [class^='swal2-success-line'] {
+  background-color: #8C6428 !important;
+}
+
+.swal2-icon.swal2-success .swal2-success-ring {
+  border-color: rgba(216, 183, 126, 0.35) !important;
+}

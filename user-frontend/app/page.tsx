@@ -28,6 +28,7 @@ import { generateTryOnApi, ApiErrorWithDetails } from "../services/api";
 import { JEWELRY_CATEGORIES } from "../constants/categories";
 import { Sparkles, AlertTriangle, ArrowRight, Camera, Wand2 } from "lucide-react";
 import { toast } from "sonner";
+import { showSweetTryOnReady, showSweetToast } from "../lib/sweetalert";
 import { cn } from "../lib/utils";
 
 // Smart helper to extract suggested categories from details or message
@@ -154,6 +155,15 @@ export default function TryOnWorkspacePage() {
 
     setIsGenerating(true);
     setGenerationError(null);
+    toast.info("Synthesizing luxury try-on with neural lighting & gemstone raytracing...", {
+      icon: "✨",
+      duration: 4000,
+    });
+
+    // Smooth scroll down to cinema preview when generation initiates
+    setTimeout(() => {
+      resultRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 250);
 
     try {
       const response = await generateTryOnApi({
@@ -170,12 +180,12 @@ export default function TryOnWorkspacePage() {
       });
 
       setResult(response);
-      toast.success("AI virtual try-on generated successfully!");
+      toast.success("AI virtual try-on generated successfully!", { icon: "💎" });
 
-      // Smooth scroll to result
-      setTimeout(() => {
+      // Trigger luxury SweetAlert celebration
+      showSweetTryOnReady(() => {
         resultRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 200);
+      });
     } catch (err: unknown) {
       const apiErr = err as ApiErrorWithDetails;
       const errorMsg =
@@ -464,6 +474,54 @@ export default function TryOnWorkspacePage() {
 
         {/* Results Section */}
         <div ref={resultRef}>
+          {/* Animated Synthesis Cinema Canvas (Visible during generation before result arrives) */}
+          {isGenerating && !result && (
+            <div className="mt-8 rounded-3xl border border-[#E9DFC8] bg-gradient-to-b from-[#FAF7F2] via-[#F8F3EA] to-[#F4EFE6] p-8 sm:p-12 text-center relative overflow-hidden shadow-xl animate-pulse-glow">
+              {/* Golden Laser Scan Beam */}
+              <div className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#D8B77E] to-transparent shadow-[0_0_20px_#D8B77E] animate-laser-sweep z-20 pointer-events-none" />
+
+              {/* Background ambient lighting */}
+              <div className="absolute -top-16 -left-16 w-52 h-52 bg-[#D8B77E]/25 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-16 -right-16 w-52 h-52 bg-[#8C6428]/15 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="relative z-10 max-w-md mx-auto flex flex-col items-center">
+                {/* Visual Scanner Frame with Pulsing Jewelry Core */}
+                <div className="relative w-48 h-60 sm:w-56 sm:h-68 rounded-3xl bg-[#EDE6DC]/70 border border-[#D8B77E]/60 flex flex-col items-center justify-center p-6 shadow-inner overflow-hidden mb-6 backdrop-blur-sm">
+                  {/* Subtle Grid Pattern */}
+                  <div className="absolute inset-0 bg-[radial-gradient(#D8B77E_1px,transparent_1px)] [background-size:16px_16px] opacity-40" />
+
+                  {/* Pulsing Concentric Rings */}
+                  <div className="relative flex items-center justify-center">
+                    <span className="w-24 h-24 rounded-full bg-[#D8B77E]/20 animate-ping absolute" />
+                    <span className="w-20 h-20 rounded-full border border-[#D8B77E]/50 animate-pulse absolute" />
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#2A2622] via-[#1A1715] to-[#121110] text-[#D8B77E] flex items-center justify-center shadow-xl border border-[#D8B77E] relative z-10 animate-bounce">
+                      <Sparkles className="w-8 h-8 text-[#D8B77E]" />
+                    </div>
+                  </div>
+
+                  <p className="mt-6 text-[11px] font-serif font-bold text-[#1A1715] tracking-wider relative z-10 uppercase">
+                    Neural Image Synthesis
+                  </p>
+                  <span className="text-[10px] text-[#8C6428] font-mono mt-0.5 relative z-10 font-semibold">
+                    2K UHD Photoreal Polish
+                  </span>
+                </div>
+
+                <h3 className="font-serif text-xl sm:text-2xl font-bold text-[#1A1715] tracking-tight">
+                  Crafting Your Virtual Try-On...
+                </h3>
+                <p className="text-xs sm:text-sm text-[#7A6E61] mt-1.5 max-w-sm leading-relaxed">
+                  Our multimodal engine is aligning physical drape, lighting reflections, and specular gemstone facets.
+                </p>
+
+                <div className="mt-4 flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 border border-[#E8DFC9] text-[11px] text-[#8C6428] font-medium shadow-sm">
+                  <span className="w-2 h-2 rounded-full bg-[#10B981] animate-ping" />
+                  <span>Gemini Multimodal Neural Pipeline Active</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {result && (
             <ResultSection
               result={result}

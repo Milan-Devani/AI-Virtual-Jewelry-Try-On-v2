@@ -3,8 +3,9 @@
 import * as React from "react";
 import { Modal } from "../ui/dialog";
 import { Button } from "../ui/button";
-import { Sparkles, Check, ArrowRight, ShieldCheck } from "lucide-react";
+import { Sparkles, Check, ArrowRight, ShieldCheck, LogIn } from "lucide-react";
 import Link from "next/link";
+import { dispatchOpenAuth } from "../../services/api";
 
 interface MembershipUpgradeModalProps {
   isOpen: boolean;
@@ -108,6 +109,24 @@ export function MembershipUpgradeModal({
           <Link href="/pricing" onClick={onClose} className="font-semibold text-[#8C6428] hover:underline flex items-center gap-1">
             Compare all plans <ArrowRight className="w-3 h-3" />
           </Link>
+        </div>
+
+        {/* Existing Member Direct Sign In */}
+        <div className="pt-2 pb-1 text-center border-t border-[#EBE5DC]">
+          <p className="text-xs text-[#7A736B]">
+            Already have an active membership?{" "}
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                dispatchOpenAuth("login");
+              }}
+              className="inline-flex items-center gap-1 font-bold text-[#1A1715] hover:text-[#8C6428] underline underline-offset-2 transition-colors cursor-pointer"
+            >
+              <LogIn className="w-3 h-3" />
+              Sign In to Your Account
+            </button>
+          </p>
         </div>
       </div>
     </Modal>

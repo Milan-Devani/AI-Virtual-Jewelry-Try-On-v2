@@ -11,8 +11,10 @@ import {
   submitVerificationApi,
   getMyVerificationsApi,
   getAuthToken,
+  AUTH_CHANGE_EVENT,
 } from "../../services/api";
 import { toast } from "sonner";
+import { showSweetSuccess, showSweetToast } from "../../lib/sweetalert";
 import {
   QrCode,
   Copy,
@@ -41,6 +43,19 @@ function PaymentsContent() {
   const [verifications, setVerifications] = React.useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = React.useState(true);
 
+  const loadVerifications = React.useCallback(() => {
+    if (getAuthToken()) {
+      setLoadingHistory(true);
+      getMyVerificationsApi()
+        .then((data) => setVerifications(data))
+        .catch(() => setVerifications([]))
+        .finally(() => setLoadingHistory(false));
+    } else {
+      setVerifications([]);
+      setLoadingHistory(false);
+    }
+  }, []);
+
   // Load plans & user's past verifications
   React.useEffect(() => {
     getPlansApi()
@@ -52,15 +67,18 @@ function PaymentsContent() {
       })
       .catch(() => {});
 
-    if (getAuthToken()) {
-      getMyVerificationsApi()
-        .then((data) => setVerifications(data))
-        .catch(() => {})
-        .finally(() => setLoadingHistory(false));
-    } else {
-      setLoadingHistory(false);
-    }
-  }, []);
+    loadVerifications();
+  }, [loadVerifications, selectedPlanId]);
+
+  // React to auth changes (e.g. login or logout)
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleAuth = () => {
+      loadVerifications();
+    };
+    window.addEventListener(AUTH_CHANGE_EVENT, handleAuth);
+    return () => window.removeEventListener(AUTH_CHANGE_EVENT, handleAuth);
+  }, [loadVerifications]);
 
   // Fetch UPI details when selected plan changes
   React.useEffect(() => {
@@ -73,7 +91,7 @@ function PaymentsContent() {
   const handleCopyUpi = () => {
     if (upiDetails?.upiId) {
       navigator.clipboard.writeText(upiDetails.upiId);
-      toast.success("UPI ID copied to clipboard: " + upiDetails.upiId);
+      showSweetToast("UPI ID copied to clipboard: " + upiDetails.upiId, "success");
     }
   };
 
@@ -116,7 +134,12 @@ function PaymentsContent() {
       formData.append("screenshot", screenshotFile);
 
       await submitVerificationApi(formData);
-      toast.success("Payment verification submitted successfully! Admin will verify in ~15 mins.");
+      
+      showSweetSuccess(
+        "Payment Submitted for Verification! 💎",
+        "Your UPI UTR receipt has been securely submitted. Our team will verify your transaction within ~15 minutes and activate your credits."
+      );
+      toast.success("UTR submitted! Awaiting quick verification.");
 
       setUtrNumber("");
       setScreenshotFile(null);

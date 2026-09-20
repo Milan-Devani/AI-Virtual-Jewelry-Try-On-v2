@@ -26,6 +26,7 @@ export function setAuthToken(token: string) {
 export function clearAuthToken() {
   if (typeof window !== "undefined") {
     localStorage.removeItem(TOKEN_KEY);
+    dispatchAuthChange(null);
   }
 }
 
@@ -130,12 +131,35 @@ export async function generateTryOnApi(
 }
 
 // ==================== AUTH APIS ====================
+export const AUTH_CHANGE_EVENT = "jewelai_auth_changed";
+export const OPEN_AUTH_EVENT = "jewelai_open_auth";
+
+export function dispatchAuthChange(user?: any) {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(AUTH_CHANGE_EVENT, { detail: { user } }));
+  }
+}
+
+export function dispatchOpenAuth(mode: "login" | "register" = "login") {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent(OPEN_AUTH_EVENT, { detail: { mode } }));
+  }
+}
+
+async function safeJsonParse(res: Response): Promise<any> {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 export async function registerApi(payload: {
   email: string;
   password: string;
-  name?: string;
   firstName?: string;
   lastName?: string;
+  name?: string;
   phoneNumber?: string;
 }) {
   const res = await fetch(`${API_BASE_URL}/auth/register`, {
@@ -143,12 +167,13 @@ export async function registerApi(payload: {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  const data = await res.json();
-  if (!res.ok || !data.success) {
-    throw new Error(data.error?.message || data.message || "Registration failed");
+  const data = await safeJsonParse(res);
+  if (!res.ok || !data?.success) {
+    throw new Error(data?.error?.message || data?.message || "Registration failed. Please check your details and try again.");
   }
   if (data.data?.token) {
     setAuthToken(data.data.token);
+    dispatchAuthChange(data.data.user);
   }
   return data.data;
 }
@@ -159,12 +184,13 @@ export async function loginApi(payload: { email: string; password: string }) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  const data = await res.json();
-  if (!res.ok || !data.success) {
-    throw new Error(data.error?.message || data.message || "Login failed");
+  const data = await safeJsonParse(res);
+  if (!res.ok || !data?.success) {
+    throw new Error(data?.error?.message || data?.message || "Invalid email or password. Please try again.");
   }
   if (data.data?.token) {
     setAuthToken(data.data.token);
+    dispatchAuthChange(data.data.user);
   }
   return data.data;
 }
@@ -173,22 +199,32 @@ export async function getMeApi() {
   const token = getAuthToken();
   if (!token) return null;
 
-  const res = await fetch(`${API_BASE_URL}/me`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const data = await res.json();
-  if (!res.ok || !data.success) {
-    clearAuthToken();
+  try {
+    const res = await fetch(`${API_BASE_URL}/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await safeJsonParse(res);
+    if (!res.ok || !data?.success) {
+      // ONLY invalidate token if backend explicitly responded with 401 Unauthorized.
+      // Do NOT clear token on 500, 502, 503, 504, or network glitches.
+      if (res.status === 401) {
+        clearAuthToken();
+        dispatchAuthChange(null);
+      }
+      return null;
+    }
+    return data.data;
+  } catch {
+    // Network timeout or cold start: preserve token in localStorage
     return null;
   }
-  return data.data;
 }
 
 // ==================== MEMBERSHIP & PLANS ====================
 export async function getPlansApi() {
   const res = await fetch(`${API_BASE_URL}/membership/plans`);
-  const data = await res.json();
-  if (!res.ok || !data.success) {
+  const data = await safeJsonParse(res);
+  if (!res.ok || !data?.success) {
     throw new Error("Failed to fetch membership plans");
   }
   return data.data;
@@ -198,12 +234,16 @@ export async function getMyMembershipApi() {
   const token = getAuthToken();
   if (!token) return null;
 
-  const res = await fetch(`${API_BASE_URL}/me/membership`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const data = await res.json();
-  if (!res.ok || !data.success) return null;
-  return data.data;
+  try {
+    const res = await fetch(`${API_BASE_URL}/me/membership`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await safeJsonParse(res);
+    if (!res.ok || !data?.success) return null;
+    return data.data;
+  } catch {
+    return null;
+  }
 }
 
 // ==================== PAYMENTS & UPI ====================
@@ -212,9 +252,9 @@ export async function getUpiDetailsApi(planId: string) {
   const res = await fetch(`${API_BASE_URL}/payments/upi-details/${planId}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
-  const data = await res.json();
-  if (!res.ok || !data.success) {
-    throw new Error(data.error?.message || "Failed to load payment details");
+  const data = await safeJsonParse(res);
+  if (!res.ok || !data?.success) {
+    throw new Error(data?.error?.message || "Failed to load payment details");
   }
   return data.data;
 }
@@ -226,9 +266,9 @@ export async function submitVerificationApi(formData: FormData) {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formData,
   });
-  const data = await res.json();
-  if (!res.ok || !data.success) {
-    throw new Error(data.error?.message || "Failed to submit payment verification");
+  const data = await safeJsonParse(res);
+  if (!res.ok || !data?.success) {
+    throw new Error(data?.error?.message || "Failed to submit payment verification");
   }
   return data.data;
 }
@@ -237,12 +277,16 @@ export async function getMyVerificationsApi() {
   const token = getAuthToken();
   if (!token) return [];
 
-  const res = await fetch(`${API_BASE_URL}/payments/my-verifications`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const data = await res.json();
-  if (!res.ok || !data.success) return [];
-  return data.data;
+  try {
+    const res = await fetch(`${API_BASE_URL}/payments/my-verifications`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await safeJsonParse(res);
+    if (!res.ok || !data?.success) return [];
+    return data.data;
+  } catch {
+    return [];
+  }
 }
 
 // ==================== LOCAL HISTORY HELPERS ====================

@@ -6,6 +6,7 @@ import { JEWELRY_CATEGORIES } from "../../constants/categories";
 import { generateDownloadFilename } from "../../lib/utils";
 import { Trash2, Download, ExternalLink, RefreshCw, Sparkles, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
+import { showSweetConfirm, showSweetToast } from "../../lib/sweetalert";
 
 interface HistoryModalProps {
   isOpen: boolean;
@@ -23,8 +24,8 @@ export function HistoryModal({ isOpen, onClose, onSelectRecord }: HistoryModalPr
     try {
       const data = await fetchHistoryApi("anonymous", selectedCategory);
       setHistory(data);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      toast.error("Failed to load history");
     } finally {
       setIsLoading(false);
     }
@@ -37,10 +38,18 @@ export function HistoryModal({ isOpen, onClose, onSelectRecord }: HistoryModalPr
   }, [isOpen, loadHistory]);
 
   const handleDelete = async (id: string) => {
+    const confirmation = await showSweetConfirm(
+      "Delete Try-On Record?",
+      "Are you sure you wish to permanently remove this rendered virtual try-on from your collection?",
+      "Yes, Delete Record",
+      "Keep Record"
+    );
+    if (!confirmation.isConfirmed) return;
+
     try {
       await deleteHistoryApi(id);
       setHistory((prev) => prev.filter((r) => r.id !== id));
-      toast.success("Generation record deleted");
+      showSweetToast("Record deleted from studio history", "success");
     } catch {
       toast.error("Failed to delete generation record");
     }

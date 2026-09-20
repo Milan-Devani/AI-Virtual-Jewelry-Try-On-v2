@@ -22,12 +22,13 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (user: any) => void;
+  initialMode?: "login" | "register";
 }
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
-export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
-  const [isRegister, setIsRegister] = React.useState(false);
+export function AuthModal({ isOpen, onClose, onSuccess, initialMode = "login" }: AuthModalProps) {
+  const [isRegister, setIsRegister] = React.useState(initialMode === "register");
   const [firstName, setFirstName] = React.useState("");
   const [lastName, setLastName] = React.useState("");
   const [phoneNumber, setPhoneNumber] = React.useState("");
@@ -41,6 +42,26 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
 
+  const resetForm = React.useCallback(() => {
+    setPassword("");
+    setConfirmPassword("");
+    setEmailTouched(false);
+    setPasswordTouched(false);
+    setConfirmPasswordTouched(false);
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+  }, []);
+
+  // Sync mode when modal opens or initialMode changes
+  React.useEffect(() => {
+    if (isOpen) {
+      setIsRegister(initialMode === "register");
+      resetForm();
+    } else {
+      resetForm();
+    }
+  }, [isOpen, initialMode, resetForm]);
+
   // Email validation state
   const cleanEmail = email.trim().toLowerCase();
   const isEmailValid = cleanEmail.length > 0 && EMAIL_REGEX.test(cleanEmail);
@@ -53,13 +74,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   // Reset form when switching mode
   const toggleMode = (registerMode: boolean) => {
     setIsRegister(registerMode);
-    setPassword("");
-    setConfirmPassword("");
-    setEmailTouched(false);
-    setPasswordTouched(false);
-    setConfirmPasswordTouched(false);
-    setShowPassword(false);
-    setShowConfirmPassword(false);
+    resetForm();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -126,6 +141,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
 
         toast.success("Account created successfully! Welcome to JEWELAI.");
         onSuccess(data.user);
+        resetForm();
         onClose();
       } catch (err: any) {
         toast.error(err.message || "Registration failed. Please try again.");
@@ -139,6 +155,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
         const data = await loginApi({ email: cleanEmail, password });
         toast.success("Welcome back to JEWELAI!");
         onSuccess(data.user);
+        resetForm();
         onClose();
       } catch (err: any) {
         toast.error(err.message || "Authentication failed. Please check your credentials.");

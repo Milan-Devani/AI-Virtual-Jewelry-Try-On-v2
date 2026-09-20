@@ -6,7 +6,8 @@ import { usePathname } from "next/navigation";
 import { Sparkles, History, Settings, User, LogOut, CreditCard, LayoutDashboard, Wand2 } from "lucide-react";
 import { Button } from "../ui/button";
 import { AuthModal } from "../auth/AuthModal";
-import { getMeApi, clearAuthToken, getAuthToken } from "../../services/api";
+import { getMeApi, clearAuthToken, getAuthToken, AUTH_CHANGE_EVENT, OPEN_AUTH_EVENT } from "../../services/api";
+import { showSweetConfirm, showSweetToast } from "../../lib/sweetalert";
 
 interface HeaderProps {
   onOpenHistory?: () => void;
@@ -16,6 +17,7 @@ interface HeaderProps {
 export function Header({ onOpenHistory, onOpenSettings }: HeaderProps) {
   const pathname = usePathname();
   const [isAuthOpen, setIsAuthOpen] = React.useState(false);
+  const [authInitialMode, setAuthInitialMode] = React.useState<"login" | "register">("login");
   const [user, setUser] = React.useState<any>(null);
   const [membership, setMembership] = React.useState<any>(null);
 
@@ -26,6 +28,9 @@ export function Header({ onOpenHistory, onOpenSettings }: HeaderProps) {
         if (data) {
           setUser(data.user);
           setMembership(data.membership);
+        } else {
+          setUser(null);
+          setMembership(null);
         }
       } catch {
         setUser(null);
@@ -41,11 +46,41 @@ export function Header({ onOpenHistory, onOpenSettings }: HeaderProps) {
     loadUser();
   }, [loadUser, pathname]);
 
-  const handleLogout = () => {
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleAuthChange = () => {
+      loadUser();
+    };
+
+    const handleOpenAuth = (e: any) => {
+      if (e.detail?.mode) {
+        setAuthInitialMode(e.detail.mode);
+      }
+      setIsAuthOpen(true);
+    };
+
+    window.addEventListener(AUTH_CHANGE_EVENT, handleAuthChange);
+    window.addEventListener(OPEN_AUTH_EVENT, handleOpenAuth);
+    return () => {
+      window.removeEventListener(AUTH_CHANGE_EVENT, handleAuthChange);
+      window.removeEventListener(OPEN_AUTH_EVENT, handleOpenAuth);
+    };
+  }, [loadUser]);
+
+  const handleLogout = async () => {
+    const confirmation = await showSweetConfirm(
+      "Sign Out of JEWELAI?",
+      "Are you sure you wish to end your session? Your saved virtual try-ons and credits remain safely stored.",
+      "Sign Out",
+      "Stay Signed In"
+    );
+    if (!confirmation.isConfirmed) return;
+
     clearAuthToken();
     setUser(null);
     setMembership(null);
-    window.location.reload();
+    showSweetToast("Signed out successfully", "info");
   };
 
   const navLinks = [
@@ -144,6 +179,15 @@ export function Header({ onOpenHistory, onOpenSettings }: HeaderProps) {
             {/* Auth Button */}
             {user ? (
               <div className="flex items-center gap-2 pl-2 border-l border-[#EBE5DC]">
+                {/* Mobile / Tablet Avatar Pill */}
+                <div
+                  className="flex lg:hidden items-center justify-center w-7 h-7 rounded-full bg-[#1A1715] text-[#D8B77E] text-[11px] font-bold border border-[#3E3832]"
+                  title={`${user.name || user.email} (${membership?.plan?.name || "Free Explorer"})`}
+                >
+                  {(user.name || user.email || "U")[0].toUpperCase()}
+                </div>
+
+                {/* Desktop User Info */}
                 <div className="flex flex-col text-right hidden lg:block">
                   <span className="text-xs font-bold text-[#1A1715] truncate max-w-[120px]">
                     {user.name || user.email}
@@ -165,7 +209,10 @@ export function Header({ onOpenHistory, onOpenSettings }: HeaderProps) {
             ) : (
               <Button
                 size="sm"
-                onClick={() => setIsAuthOpen(true)}
+                onClick={() => {
+                  setAuthInitialMode("login");
+                  setIsAuthOpen(true);
+                }}
                 className="bg-[#1A1715] hover:bg-[#2A2622] text-[#FBF9F5] text-xs font-semibold px-4"
               >
                 Sign In
@@ -177,6 +224,7 @@ export function Header({ onOpenHistory, onOpenSettings }: HeaderProps) {
 
       <AuthModal
         isOpen={isAuthOpen}
+        initialMode={authInitialMode}
         onClose={() => setIsAuthOpen(false)}
         onSuccess={(u) => {
           setUser(u);

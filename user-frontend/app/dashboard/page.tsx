@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { Header } from "../../components/layout/Header";
 import { Button } from "../../components/ui/button";
-import { getMeApi, getLocalHistory } from "../../services/api";
+import { getMeApi, getLocalHistory, AUTH_CHANGE_EVENT } from "../../services/api";
 import {
   Sparkles,
   CreditCard,
@@ -23,13 +23,27 @@ export default function DashboardPage() {
   const [localGenerations, setLocalGenerations] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
 
-  React.useEffect(() => {
+  const fetchUserData = React.useCallback(() => {
+    setLoading(true);
     setLocalGenerations(getLocalHistory());
     getMeApi()
       .then((data) => setProfileData(data))
-      .catch(() => {})
+      .catch(() => setProfileData(null))
       .finally(() => setLoading(false));
   }, []);
+
+  React.useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleAuth = () => {
+      fetchUserData();
+    };
+    window.addEventListener(AUTH_CHANGE_EVENT, handleAuth);
+    return () => window.removeEventListener(AUTH_CHANGE_EVENT, handleAuth);
+  }, [fetchUserData]);
 
   const membership = profileData?.membership;
   const isActivePlan = membership?.isActive ?? false;
