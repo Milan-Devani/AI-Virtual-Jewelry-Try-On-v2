@@ -21,12 +21,21 @@ export function getPlacementPromptForCategory(
   const name = customName || categoryId;
   const placementLocation = customPlacement || "appropriate anatomical location";
 
+  const isPairOrCombo = name.includes("+") || placementLocation.includes(",");
+  const pairDirective = isPairOrCombo
+    ? `\nMULTI-PIECE PAIR / COMBO INSTRUCTIONS:
+This product set contains multiple coordinated jewelry pieces (${name}) for distinct anatomical body zones (${placementLocation}).
+- Dress EACH designated piece accurately onto its matching anatomical target on the model (e.g. earrings/jhumkas on ears, necklace/pendant on neck, payal/anklet on ankles/feet, bangles/bracelets on wrists, rings on fingers).
+- Erase, remove, and replace any pre-existing jewelry at ALL corresponding target body areas (${placementLocation}).
+- Maintain consistent jewelry craftsmanship, metal luster, gemstone setting, and realistic lighting reflections across all pieces in the set.`
+    : "";
+
   return `Place the exact jewelry product (${name}) naturally and seamlessly on the model's ${placementLocation}.
 Preserve:
 - full jewelry geometry and craftsmanship
 - gemstones, metalwork, and delicate ornaments
 - proportions and natural perspective
-Make it physically wrap or attach to the model's ${placementLocation} with realistic contact shadows and photorealistic reflections.`;
+Make it physically wrap or attach to the model's ${placementLocation} with realistic contact shadows and photorealistic reflections.${pairDirective}`;
 }
 
 export function getBackgroundPrompt(background?: string): string {

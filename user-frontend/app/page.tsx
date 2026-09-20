@@ -148,8 +148,9 @@ export default function TryOnWorkspacePage() {
       return;
     }
 
-    if (selectedCategory === "custom" && !customCategoryName.trim()) {
-      toast.error("Please enter a custom jewelry category name.");
+    const isCustom = selectedCategory === "custom" || selectedCategory === "custom-combo";
+    if (isCustom && !customCategoryName.trim()) {
+      toast.error("Please configure or select a custom jewelry category.");
       return;
     }
 
@@ -169,11 +170,11 @@ export default function TryOnWorkspacePage() {
       const response = await generateTryOnApi({
         modelFile: isAiModelMode ? null : modelState.file,
         jewelryFile: jewelryState.file,
-        category: selectedCategory,
+        category: selectedCategory === "custom-combo" ? "custom" : selectedCategory,
         mode: tryOnMode,
         modelConfig: isAiModelMode ? aiModelConfig : undefined,
-        customCategoryName: selectedCategory === "custom" ? customCategoryName : undefined,
-        customPlacement: selectedCategory === "custom" ? customPlacement : undefined,
+        customCategoryName: isCustom ? customCategoryName : undefined,
+        customPlacement: isCustom ? customPlacement : undefined,
         background,
         aspectRatio,
         imageSize,
