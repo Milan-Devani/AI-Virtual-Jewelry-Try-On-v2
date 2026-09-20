@@ -13,6 +13,9 @@ import { getStorageProvider } from "./storage/index.js";
 
 const app = express();
 
+// Trust reverse proxy (Render, Cloudflare, Vercel) for rate-limiting & IP resolution
+app.set("trust proxy", 1);
+
 // Initialize Storage Provider
 getStorageProvider();
 
