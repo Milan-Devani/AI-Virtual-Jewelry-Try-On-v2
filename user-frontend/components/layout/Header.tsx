@@ -117,8 +117,9 @@ export function Header({ onOpenHistory, onOpenSettings }: HeaderProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-[#EBE5DC]/80 bg-[#FBF9F5]/90 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
+      {/* Fixed top navbar with guaranteed full viewport visibility */}
+      <header className="fixed top-0 left-0 right-0 z-40 w-full border-b border-[#EBE5DC]/80 bg-[#FBF9F5]/95 backdrop-blur-md shadow-subtle transition-all">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
           {/* Brand Logo & Nav */}
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-3 group">
@@ -250,6 +251,8 @@ export function Header({ onOpenHistory, onOpenSettings }: HeaderProps) {
           </div>
         </div>
       </header>
+      {/* Spacer to preserve document flow for fixed header */}
+      <div className="h-16 sm:h-20 w-full shrink-0" aria-hidden="true" />
 
       <AuthModal
         isOpen={isAuthOpen}

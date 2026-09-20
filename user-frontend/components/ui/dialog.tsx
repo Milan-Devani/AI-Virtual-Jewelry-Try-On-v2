@@ -45,18 +45,21 @@ export function Modal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm p-3 sm:p-6 flex min-h-full items-center justify-center animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      {/* Clickable Backdrop */}
       <div
-        className="fixed inset-0"
+        className="fixed inset-0 transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
-      <div
-        className={cn(
-          "relative w-full my-auto bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-[#E9E3DA] flex flex-col max-h-[calc(100vh-2rem)] sm:max-h-[88vh] z-10 animate-in zoom-in-95 duration-200",
-          maxWidthStyles[maxWidth]
-        )}
-      >
+      {/* Centering Flex Container */}
+      <div className="min-h-full flex items-center justify-center p-3 sm:p-6 pointer-events-none">
+        <div
+          className={cn(
+            "relative w-full my-auto bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-[#E9E3DA] flex flex-col max-h-[calc(100vh-2.5rem)] sm:max-h-[86vh] z-10 pointer-events-auto animate-in zoom-in-95 duration-200",
+            maxWidthStyles[maxWidth]
+          )}
+        >
         <div className="flex items-center justify-between px-5 sm:px-6 py-4 sm:py-5 border-b border-[#F0EBE3] shrink-0 bg-[#FCFAF7] rounded-t-2xl sm:rounded-t-3xl">
           <div>
             <h2 className="text-base sm:text-lg font-bold text-[#1A1715]">{title}</h2>
@@ -73,6 +76,7 @@ export function Modal({
           </button>
         </div>
         <div className="p-4 sm:p-6 overflow-y-auto overscroll-contain">{children}</div>
+      </div>
       </div>
     </div>
   );

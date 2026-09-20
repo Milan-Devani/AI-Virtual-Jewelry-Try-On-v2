@@ -8,6 +8,10 @@
     --foreground: #1A1715;
   }
 
+  html {
+    scrollbar-gutter: stable;
+  }
+
   body {
     background-color: var(--background);
     color: var(--foreground);
