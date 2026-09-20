@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Modal } from "../ui/dialog";
 import { GenerationRecord } from "../../types";
-import { fetchHistoryApi, deleteHistoryApi } from "../../services/api";
+import { fetchHistoryApi, deleteHistoryApi, normalizeMediaUrl } from "../../services/api";
 import { JEWELRY_CATEGORIES } from "../../constants/categories";
 import { generateDownloadFilename } from "../../lib/utils";
 import { Trash2, Download, ExternalLink, RefreshCw, Sparkles, FolderOpen } from "lucide-react";
@@ -12,14 +12,24 @@ interface HistoryModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectRecord?: (record: GenerationRecord) => void;
+  historyRecords?: GenerationRecord[];
 }
 
-export function HistoryModal({ isOpen, onClose, onSelectRecord }: HistoryModalProps) {
-  const [history, setHistory] = React.useState<GenerationRecord[]>([]);
+export function HistoryModal({
+  isOpen,
+  onClose,
+  onSelectRecord,
+  historyRecords,
+}: HistoryModalProps) {
   const [selectedCategory, setSelectedCategory] = React.useState<string>("all");
+  const [history, setHistory] = React.useState<GenerationRecord[]>(historyRecords || []);
   const [isLoading, setIsLoading] = React.useState(false);
 
   const loadHistory = React.useCallback(async () => {
+    if (historyRecords) {
+      setHistory(historyRecords);
+      return;
+    }
     setIsLoading(true);
     try {
       const data = await fetchHistoryApi("anonymous", selectedCategory);
@@ -29,7 +39,7 @@ export function HistoryModal({ isOpen, onClose, onSelectRecord }: HistoryModalPr
     } finally {
       setIsLoading(false);
     }
-  }, [selectedCategory]);
+  }, [historyRecords, selectedCategory]);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -39,9 +49,9 @@ export function HistoryModal({ isOpen, onClose, onSelectRecord }: HistoryModalPr
 
   const handleDelete = async (id: string) => {
     const confirmation = await showSweetConfirm(
-      "Delete Try-On Record?",
-      "Are you sure you wish to permanently remove this rendered virtual try-on from your collection?",
-      "Yes, Delete Record",
+      "Delete from History?",
+      "Are you sure you want to remove this virtual try-on render from your studio history?",
+      "Delete",
       "Keep Record"
     );
     if (!confirmation.isConfirmed) return;
@@ -56,10 +66,12 @@ export function HistoryModal({ isOpen, onClose, onSelectRecord }: HistoryModalPr
   };
 
   const handleDownload = async (record: GenerationRecord) => {
-    if (!record.generatedImageUrl) return;
+    const rawUrl = record.generatedImageUrl;
+    if (!rawUrl) return;
+    const downloadUrl = normalizeMediaUrl(rawUrl);
     try {
       const filename = generateDownloadFilename(record.category, record.createdAt);
-      const res = await fetch(record.generatedImageUrl);
+      const res = await fetch(downloadUrl);
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -71,9 +83,14 @@ export function HistoryModal({ isOpen, onClose, onSelectRecord }: HistoryModalPr
       window.URL.revokeObjectURL(url);
       toast.success("Downloaded successfully");
     } catch {
-      window.open(record.generatedImageUrl, "_blank");
+      window.open(downloadUrl, "_blank");
     }
   };
+
+  const filteredHistory = React.useMemo(() => {
+    if (selectedCategory === "all") return history;
+    return history.filter((r) => r.category === selectedCategory);
+  }, [history, selectedCategory]);
 
   return (
     <Modal
@@ -148,7 +165,7 @@ export function HistoryModal({ isOpen, onClose, onSelectRecord }: HistoryModalPr
                   <div className="relative w-18 h-22 rounded-xl overflow-hidden bg-[#ECE6DD] shrink-0 border border-[#E0D7CB]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={item.generatedImageUrl || item.modelImageUrl}
+                      src={normalizeMediaUrl(item.generatedImageUrl || item.modelImageUrl)}
                       alt={item.category}
                       className="w-full h-full object-cover"
                     />
@@ -172,7 +189,7 @@ export function HistoryModal({ isOpen, onClose, onSelectRecord }: HistoryModalPr
                         <>
                           <button
                             type="button"
-                            onClick={() => window.open(item.generatedImageUrl, "_blank")}
+                            onClick={() => window.open(normalizeMediaUrl(item.generatedImageUrl), "_blank")}
                             className="inline-flex items-center gap-1 text-[11px] font-medium text-[#1A1715] bg-[#EAE2D6] px-2 py-1 rounded-lg hover:bg-[#DFD4C5]"
                           >
                             <ExternalLink className="w-3 h-3" /> View

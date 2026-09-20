@@ -76,6 +76,36 @@ export function clearAuthToken() {
   }
 }
 
+/**
+ * Normalizes media URLs so that images pointing to localhost or relative uploads
+ * automatically resolve to the public Render backend when viewed on the live site.
+ */
+export function normalizeMediaUrl(url?: string | null): string {
+  if (!url) return "";
+
+  // Dynamic backend public URL
+  const backendBase = (
+    process.env.NEXT_PUBLIC_API_URL || "https://ai-virtual-jewelry-try-on.onrender.com/api"
+  ).replace(/\/api\/?$/, "");
+
+  // If the backend generated a localhost:10000 or localhost:4000 URL
+  if (url.startsWith("http://localhost:10000") || url.startsWith("http://localhost:4000")) {
+    if (typeof window !== "undefined" && window.location.hostname === "localhost") {
+      // Local development environment: ensure port 4000
+      return url.replace("http://localhost:10000", "http://localhost:4000");
+    }
+    // Live production (Vercel): rewrite localhost to live backend URL
+    return url.replace(/^http:\/\/localhost:\d+/, backendBase);
+  }
+
+  // If the URL is relative like "/uploads/..."
+  if (url.startsWith("/uploads")) {
+    return `${backendBase}${url}`;
+  }
+
+  return url;
+}
+
 export interface GenerateTryOnPayload {
   modelFile?: File | null;
   jewelryFile: File;
@@ -154,6 +184,18 @@ export async function generateTryOnApi(
     error.code = data.error?.code || "TRYON_FAILED";
     error.details = data.error?.details || data.details;
     throw error;
+  }
+
+  if (data.data) {
+    if (data.data.imageUrl) {
+      data.data.imageUrl = normalizeMediaUrl(data.data.imageUrl);
+    }
+    if (data.data.modelImageUrl) {
+      data.data.modelImageUrl = normalizeMediaUrl(data.data.modelImageUrl);
+    }
+    if (data.data.jewelryImageUrl) {
+      data.data.jewelryImageUrl = normalizeMediaUrl(data.data.jewelryImageUrl);
+    }
   }
 
   // Save to client offline history
@@ -364,7 +406,13 @@ export function getLocalHistory(): GenerationRecord[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_HISTORY_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const list: GenerationRecord[] = raw ? JSON.parse(raw) : [];
+    return list.map((item) => ({
+      ...item,
+      generatedImageUrl: normalizeMediaUrl(item.generatedImageUrl),
+      modelImageUrl: normalizeMediaUrl(item.modelImageUrl),
+      jewelryImageUrl: normalizeMediaUrl(item.jewelryImageUrl),
+    }));
   } catch {
     return [];
   }
@@ -395,7 +443,12 @@ export async function fetchHistoryApi(
     const res = await fetch(url.toString(), { headers });
     const data = await res.json();
     if (data.success && Array.isArray(data.data)) {
-      return data.data;
+      return data.data.map((item: any) => ({
+        ...item,
+        generatedImageUrl: normalizeMediaUrl(item.generatedImageUrl || item.outputImageUrl),
+        modelImageUrl: normalizeMediaUrl(item.modelImageUrl || item.inputModelUrl),
+        jewelryImageUrl: normalizeMediaUrl(item.jewelryImageUrl || item.inputJewelryUrl),
+      }));
     }
   } catch {}
 

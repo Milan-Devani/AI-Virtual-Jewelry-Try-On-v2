@@ -20,6 +20,23 @@ export class LocalStorageProvider implements StorageProvider {
     }
   }
 
+  private getBaseUrl(): string {
+    const envUrl = process.env.BACKEND_URL || process.env.RENDER_EXTERNAL_URL || process.env.BASE_URL;
+    if (envUrl) {
+      return `${envUrl.replace(/\/+$/, "")}/uploads`;
+    }
+
+    if (process.env.RENDER_SERVICE_NAME) {
+      return `https://${process.env.RENDER_SERVICE_NAME}.onrender.com/uploads`;
+    }
+
+    if (process.env.NODE_ENV === "production") {
+      return "https://ai-virtual-jewelry-try-on.onrender.com/uploads";
+    }
+
+    return `http://localhost:${config.port}/uploads`;
+  }
+
   async upload(options: UploadOptions): Promise<StoredFile> {
     const filePath = path.join(this.uploadDir, options.key);
     const dir = path.dirname(filePath);
@@ -32,7 +49,7 @@ export class LocalStorageProvider implements StorageProvider {
     await fs.mkdir(dir, { recursive: true });
     await fs.writeFile(filePath, options.buffer);
 
-    const baseUrl = `http://localhost:${config.port}/uploads`;
+    const baseUrl = this.getBaseUrl();
     const normalizedKey = options.key.replace(/\\/g, "/");
     const url = `${baseUrl}/${normalizedKey}`;
 
@@ -58,7 +75,8 @@ export class LocalStorageProvider implements StorageProvider {
   }
 
   async getUrl(key: string): Promise<string> {
+    const baseUrl = this.getBaseUrl();
     const normalizedKey = key.replace(/\\/g, "/");
-    return `http://localhost:${config.port}/uploads/${normalizedKey}`;
+    return `${baseUrl}/${normalizedKey}`;
   }
 }

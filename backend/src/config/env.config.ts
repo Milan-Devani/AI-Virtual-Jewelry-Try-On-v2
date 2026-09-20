@@ -9,6 +9,7 @@ const envSchema = z.object({
   CLIENT_URL: z.string().default("http://localhost:3000"),
   USER_FRONTEND_URL: z.string().default("http://localhost:3000"),
   ADMIN_FRONTEND_URL: z.string().default("http://localhost:3001"),
+  BACKEND_URL: z.string().optional().default(""),
 
   // Supabase
   SUPABASE_URL: z.string().optional().default(""),
@@ -71,6 +72,7 @@ export const config = {
   clientUrl: env.CLIENT_URL,
   userFrontendUrl: env.USER_FRONTEND_URL,
   adminFrontendUrl: env.ADMIN_FRONTEND_URL,
+  backendUrl: env.BACKEND_URL || process.env.RENDER_EXTERNAL_URL || "",
   gemini: {
     apiKey: process.env.GEMINI_KEY || process.env.GEMINI_API_KEY || "",
     imageModel: env.GEMINI_IMAGE_MODEL,

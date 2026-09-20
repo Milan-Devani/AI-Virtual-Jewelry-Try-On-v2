@@ -4,6 +4,7 @@ import { TryOnGenerationResult } from "../../types";
 import { Button } from "../ui/button";
 import { ComparisonSlider } from "./ComparisonSlider";
 import { generateDownloadFilename } from "../../lib/utils";
+import { normalizeMediaUrl } from "../../services/api";
 import { toast } from "sonner";
 
 interface ResultSectionProps {
@@ -20,12 +21,15 @@ export function ResultSection({
   const [viewMode, setViewMode] = React.useState<"result" | "compare">("compare");
   const [isDownloading, setIsDownloading] = React.useState(false);
 
+  const activeImageUrl = normalizeMediaUrl(result.imageUrl);
+  const activeOriginalUrl = normalizeMediaUrl(result.modelImageUrl || result.jewelryImageUrl);
+
   const handleDownload = async () => {
     try {
       setIsDownloading(true);
       const filename = generateDownloadFilename(result.category, result.createdAt);
 
-      const response = await fetch(result.imageUrl);
+      const response = await fetch(activeImageUrl);
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
 
@@ -42,7 +46,7 @@ export function ResultSection({
       });
     } catch (err) {
       toast.error("Failed to download image directly. Opening in new tab instead.");
-      window.open(result.imageUrl, "_blank");
+      window.open(activeImageUrl, "_blank");
     } finally {
       setIsDownloading(false);
     }
@@ -71,11 +75,10 @@ export function ResultSection({
           <button
             type="button"
             onClick={() => setViewMode("compare")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              viewMode === "compare"
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${viewMode === "compare"
                 ? "bg-white text-[#1A1715] shadow-sm"
                 : "text-[#736D66] hover:text-[#1A1715]"
-            }`}
+              }`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
             <span>Before / After</span>
@@ -83,11 +86,10 @@ export function ResultSection({
           <button
             type="button"
             onClick={() => setViewMode("result")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              viewMode === "result"
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${viewMode === "result"
                 ? "bg-white text-[#1A1715] shadow-sm"
                 : "text-[#736D66] hover:text-[#1A1715]"
-            }`}
+              }`}
           >
             <ImageIcon className="w-3.5 h-3.5" />
             <span>Solo Result</span>
@@ -99,8 +101,8 @@ export function ResultSection({
       <div className="py-6 flex justify-center">
         {viewMode === "compare" ? (
           <ComparisonSlider
-            originalUrl={result.modelImageUrl || result.jewelryImageUrl}
-            generatedUrl={result.imageUrl}
+            originalUrl={activeOriginalUrl}
+            generatedUrl={activeImageUrl}
             categoryName={result.categoryName}
             aspectRatio={result.aspectRatio}
           />
@@ -108,7 +110,7 @@ export function ResultSection({
           <div className="relative w-full max-w-xl aspect-[4/5] rounded-2xl overflow-hidden border border-[#E2DAD0] shadow-md bg-[#EDE6DC]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={result.imageUrl}
+              src={activeImageUrl}
               alt="Generated AI Try-On"
               className="w-full h-full object-cover"
             />
@@ -145,7 +147,7 @@ export function ResultSection({
             className="flex-1 sm:flex-none flex items-center gap-2 px-6"
           >
             <Download className="w-4 h-4" />
-            <span>Download 2K HD</span>
+            <span>Download</span>
           </Button>
         </div>
       </div>

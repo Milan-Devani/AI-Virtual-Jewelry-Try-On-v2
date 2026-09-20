@@ -10,6 +10,7 @@ import {
   getCachedUser,
   getCachedMembership,
   getAuthToken,
+  normalizeMediaUrl,
   AUTH_CHANGE_EVENT,
 } from "../../services/api";
 import {
@@ -201,7 +202,7 @@ export default function DashboardPage() {
                   className="group relative rounded-xl overflow-hidden border border-[#E2DBD1] bg-[#FCFBF8] aspect-[4/5]"
                 >
                   <img
-                    src={item.generatedImageUrl || item.jewelryImageUrl}
+                    src={normalizeMediaUrl(item.generatedImageUrl || item.jewelryImageUrl)}
                     alt={item.category}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
