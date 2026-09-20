@@ -8,11 +8,24 @@ The exact jewelry product.
 
 The final output MUST be an authentic commercial studio photograph showing the SAME REAL HUMAN MODEL from Reference Image 1 wearing the EXACT JEWELRY PRODUCT from Reference Image 2.
 
-CRITICAL PHOTOREALISM — MUST LOOK LIKE A REAL HUMAN PHOTOGRAPH, NEVER AI-GENERATED:
+CRITICAL PRE-EXISTING JEWELRY REPLACEMENT & INPAINTING (ZERO MERGING):
+- AUTOMATIC DETECTION & COMPLETE REMOVAL: If the human model in Reference Image 1 is already wearing ANY existing jewelry in the target placement area (such as an existing necklace, mangalsutra, chain, choker, earrings, studs, hoops, jhumkas, bracelets, bangles, or maang tikka):
+  * YOU MUST COMPLETELY REMOVE, ERASE, AND REPLACE that existing jewelry with the new jewelry product from Reference Image 2.
+  * ABSOLUTELY NEVER MERGE, OVERLAY, OR DOUBLE-WEAR: Do not combine old and new necklaces together. Do not leave the old earrings underneath or blended with the new earrings. Do not generate double chains, duplicate pendants, or cluttered overlapping jewelry.
+  * CLEAN ANATOMICAL SKIN INPAINTING: Seamlessly inpaint and restore bare, flawless, natural human skin where the old jewelry was removed (neck, décolletage, collarbones, earlobes, wrists, forehead). The underlying skin must have authentic continuous skin pores, natural dermal micro-texture, and zero ghost artifacts or leftover jewelry fragments.
+  * DRESS EXCLUSIVELY IN REFERENCE IMAGE 2: The model must wear ONLY the new product jewelry from Reference Image 2 in that category.
+  * UNRELATED ACCESSORIES: Non-competing accessories in different body areas (e.g. nose stud, bindi, or outfit borders) should remain undisturbed.
+
+CRITICAL PHOTOREALISM — LUXURY COMMERCIAL STUDIO PHOTOSHOOT FEEL:
+- AUTHENTIC HUMAN REALISM: Must look like a real, high-end editorial commercial studio photograph captured of a real person. ABSOLUTELY NO plastic skin, NO airbrushed waxy smoothing, NO CGI doll look, NO fake digital filters.
 - SKIN TEXTURE: Natural microscopic skin pores, subtle epidermal micro-texture, authentic subsurface scattering, and natural warmth. NO plastic skin, NO airbrushed doll look, NO artificial CGI waxiness, NO over-smoothed face filters.
 - EYES & EXPRESSION: Natural corneal reflections, crisp catchlights from studio softboxes, realistic wetness and depth in the eyes, individual eyelash and brow definition.
+- PHYSICAL WEIGHT, GRAVITY & CONTACT: The new jewelry must physically rest against the model's anatomy with true gravitational realism:
+  * Necklaces / Mangalsutras follow the natural 3D contours of the neck and collarbones, settling with realistic physical contact shadows.
+  * Earrings / Jhumkas hang with authentic physical weight from the earlobe, casting delicate micro-shadows on the neck and jawline.
+  * Bangles / Kadas encircle the wrist naturally without hovering or clipping.
 - LIGHTING & CONTACT: Physically accurate contact shadows where the jewelry touches the skin/neck/ears/wrists, true-to-life reflections, bounce light, and authentic ambient occlusion.
-- CAMERA & OPTICS: Captured with an 85mm f/1.4 luxury fashion portrait lens (Hasselblad / Leica medium format aesthetic), crisp focus on the jewelry and facial features with gentle optical depth of field.
+- CAMERA & OPTICS: Captured with an 85mm f/1.4 luxury fashion portrait lens (Hasselblad / Leica medium format aesthetic), crisp focus on the jewelry and facial features with gentle optical depth of field, ray-traced metallic reflections on gold, silver, and gemstones.
 
 MODEL IDENTITY PRESERVATION IS CRITICAL:
 Preserve the model's exact identity and facial structure from Reference Image 1:

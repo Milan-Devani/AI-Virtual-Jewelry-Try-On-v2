@@ -18,6 +18,7 @@ export const JEWELRY_CATEGORIES: JewelryCategory[] = [
     description: "Classic drops, studs, chandeliers, hoops, and ear cuffs",
     suggestedAspectRatio: "4:5",
     promptInstructions: `Place the exact jewelry product naturally on the model's ears.
+If the model is already wearing any existing earrings, studs, or drops, COMPLETELY REMOVE AND ERASE THEM. Do not merge or layer old and new earrings. Cleanly inpaint the earlobes so only the new product earrings are worn.
 If the product contains a pair, use the same design on both ears.
 The earrings must attach naturally to the ears.
 Preserve:
@@ -37,6 +38,7 @@ Do not redesign the earrings.`
     description: "Chokers, collar necklaces, layered strings, pendants, and haar",
     suggestedAspectRatio: "4:5",
     promptInstructions: `Place the exact necklace or pendant naturally around the model's neck and upper chest.
+If the model is already wearing any pre-existing necklace, choker, chain, or mangalsutra, COMPLETELY REMOVE, ERASE, AND REPLACE IT. Do not layer, merge, or double-wear necklaces. Seamlessly inpaint the neck and collarbones with bare natural skin before placing this necklace.
 Preserve the exact:
 - chain
 - pendant
@@ -71,6 +73,7 @@ Make it physically wrap around the wrist with realistic contact shadows.`
     description: "Traditional bell-shaped earrings with dome drops and latkans",
     suggestedAspectRatio: "4:5",
     promptInstructions: `Place the exact jhumka jewelry naturally on the model's ears.
+If the model is already wearing any existing earrings, studs, or hoops, COMPLETELY REMOVE AND ERASE THEM. Cleanly restore the earlobe skin and attach ONLY the new jhumkas.
 Preserve:
 - bell shape
 - hanging elements
@@ -139,6 +142,7 @@ The connecting chain must naturally follow the hand anatomy.`
     description: "Traditional auspicious black-beaded gold chain necklace with central pendant",
     suggestedAspectRatio: "4:5",
     promptInstructions: `Place the exact mangalsutra naturally around the model's neck and draped over the upper chest.
+If the model is already wearing any existing necklace, chain, or mangalsutra, COMPLETELY REMOVE, ERASE, AND REPLACE IT. Never merge or layer multiple chains or pendants. Restore clean bare skin across the décolletage and collarbones under this mangalsutra.
 Preserve the exact:
 - black bead pattern and gold chain links
 - central pendant design, stones, and motifs
@@ -154,6 +158,7 @@ The mangalsutra chain must rest naturally along the neckline and collarbones.`
     description: "Matching set with auspicious mangalsutra necklace and coordinating earrings",
     suggestedAspectRatio: "4:5",
     promptInstructions: `This is a coordinated jewelry set consisting of a Mangalsutra and matching Earrings.
+COMPLETELY REMOVE AND REPLACE PRE-EXISTING JEWELRY: If the model is already wearing any existing necklace, mangalsutra, chain, or earrings, completely erase and remove them all. Do not merge, layer, or double-wear. Cleanly inpaint bare skin on the neck, chest, and earlobes so the model is wearing ONLY this matching set.
 1. Place the exact mangalsutra naturally around the model's neck and draped over the upper chest.
    Preserve:
    - black bead pattern and gold chain links
@@ -173,6 +178,7 @@ Ensure cohesive lighting, contact shadows, and realistic perspective across both
     description: "Complete multi-piece jewelry suite: Necklace, Earrings, Maang Tikka, Bangles/Haath Phool, & Nath",
     suggestedAspectRatio: "4:5",
     promptInstructions: `This is a Complete Multi-Piece Luxury / Bridal Jewelry Set.
+COMPLETELY REMOVE AND REPLACE PRE-EXISTING JEWELRY: If the model is currently wearing any pre-existing necklaces, earrings, maang tikka, or bangles, completely remove and erase them all. Inpaint clean bare skin across all zones before adorning the model in this new suite.
 Inspect all jewelry pieces present in the product image and fit them seamlessly across all appropriate anatomical regions on the model:
 1. Neck & Chest: Place the necklace, choker, and long haar with exact gemstone clusters, pendants, and layering.
 2. Ears: Place the matching earrings or jhumkas naturally on both ears.
