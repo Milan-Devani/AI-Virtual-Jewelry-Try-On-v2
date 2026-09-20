@@ -4,7 +4,14 @@ import * as React from "react";
 import Link from "next/link";
 import { Header } from "../../components/layout/Header";
 import { Button } from "../../components/ui/button";
-import { getMeApi, getLocalHistory, AUTH_CHANGE_EVENT } from "../../services/api";
+import {
+  getMeApi,
+  getLocalHistory,
+  getCachedUser,
+  getCachedMembership,
+  getAuthToken,
+  AUTH_CHANGE_EVENT,
+} from "../../services/api";
 import {
   Sparkles,
   CreditCard,
@@ -24,15 +31,29 @@ export default function DashboardPage() {
   const [loading, setLoading] = React.useState(true);
 
   const fetchUserData = React.useCallback(() => {
-    setLoading(true);
     setLocalGenerations(getLocalHistory());
     getMeApi()
-      .then((data) => setProfileData(data))
-      .catch(() => setProfileData(null))
+      .then((data) => {
+        if (data) setProfileData(data);
+      })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
   React.useEffect(() => {
+    // Synchronously hydrate from cache on mount (0ms)
+    if (getAuthToken()) {
+      const cachedUser = getCachedUser();
+      const cachedMem = getCachedMembership();
+      if (cachedUser) {
+        setProfileData({
+          user: cachedUser,
+          membership: cachedMem,
+          subscription: cachedUser.activeSubscription || null,
+        });
+        setLoading(false);
+      }
+    }
     fetchUserData();
   }, [fetchUserData]);
 

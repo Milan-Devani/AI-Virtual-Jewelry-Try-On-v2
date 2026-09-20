@@ -11,6 +11,8 @@ import {
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 const LOCAL_STORAGE_HISTORY_KEY = "jewelai_history_records";
 const TOKEN_KEY = "jewelai_auth_token";
+const USER_KEY = "jewelai_cached_user";
+const MEMBERSHIP_KEY = "jewelai_cached_membership";
 
 export function getAuthToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -23,9 +25,53 @@ export function setAuthToken(token: string) {
   }
 }
 
+export function getCachedUser(): any | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(USER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setCachedUser(user: any | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (user) {
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(USER_KEY);
+    }
+  } catch {}
+}
+
+export function getCachedMembership(): any | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(MEMBERSHIP_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setCachedMembership(membership: any | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (membership) {
+      localStorage.setItem(MEMBERSHIP_KEY, JSON.stringify(membership));
+    } else {
+      localStorage.removeItem(MEMBERSHIP_KEY);
+    }
+  } catch {}
+}
+
 export function clearAuthToken() {
   if (typeof window !== "undefined") {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(MEMBERSHIP_KEY);
     dispatchAuthChange(null);
   }
 }
@@ -173,6 +219,9 @@ export async function registerApi(payload: {
   }
   if (data.data?.token) {
     setAuthToken(data.data.token);
+    if (data.data.user) {
+      setCachedUser(data.data.user);
+    }
     dispatchAuthChange(data.data.user);
   }
   return data.data;
@@ -190,6 +239,21 @@ export async function loginApi(payload: { email: string; password: string }) {
   }
   if (data.data?.token) {
     setAuthToken(data.data.token);
+    if (data.data.user) {
+      setCachedUser(data.data.user);
+      if (data.data.user.activeSubscription) {
+        const sub = data.data.user.activeSubscription;
+        const plan = sub.plan || null;
+        setCachedMembership({
+          status: sub.status || "active",
+          plan: plan,
+          totalCredits: plan?.generationLimit || 0,
+          usedCredits: 0,
+          remainingCredits: plan?.generationLimit || 0,
+          isActive: sub.status === "active",
+        });
+      }
+    }
     dispatchAuthChange(data.data.user);
   }
   return data.data;
@@ -213,9 +277,15 @@ export async function getMeApi() {
       }
       return null;
     }
+    if (data.data?.user) {
+      setCachedUser(data.data.user);
+    }
+    if (data.data?.membership) {
+      setCachedMembership(data.data.membership);
+    }
     return data.data;
   } catch {
-    // Network timeout or cold start: preserve token in localStorage
+    // Network timeout or cold start: preserve token & cached data in localStorage
     return null;
   }
 }

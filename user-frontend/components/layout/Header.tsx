@@ -6,7 +6,15 @@ import { usePathname } from "next/navigation";
 import { Sparkles, History, Settings, User, LogOut, CreditCard, LayoutDashboard, Wand2 } from "lucide-react";
 import { Button } from "../ui/button";
 import { AuthModal } from "../auth/AuthModal";
-import { getMeApi, clearAuthToken, getAuthToken, AUTH_CHANGE_EVENT, OPEN_AUTH_EVENT } from "../../services/api";
+import {
+  getMeApi,
+  clearAuthToken,
+  getAuthToken,
+  getCachedUser,
+  getCachedMembership,
+  AUTH_CHANGE_EVENT,
+  OPEN_AUTH_EVENT,
+} from "../../services/api";
 import { showSweetConfirm, showSweetToast } from "../../lib/sweetalert";
 
 interface HeaderProps {
@@ -20,28 +28,45 @@ export function Header({ onOpenHistory, onOpenSettings }: HeaderProps) {
   const [authInitialMode, setAuthInitialMode] = React.useState<"login" | "register">("login");
   const [user, setUser] = React.useState<any>(null);
   const [membership, setMembership] = React.useState<any>(null);
+  const [mounted, setMounted] = React.useState(false);
 
   const loadUser = React.useCallback(async () => {
-    if (getAuthToken()) {
-      try {
-        const data = await getMeApi();
-        if (data) {
-          setUser(data.user);
-          setMembership(data.membership);
-        } else {
-          setUser(null);
-          setMembership(null);
-        }
-      } catch {
+    const token = getAuthToken();
+    if (!token) {
+      setUser(null);
+      setMembership(null);
+      return;
+    }
+
+    try {
+      const data = await getMeApi();
+      if (data) {
+        setUser(data.user);
+        setMembership(data.membership);
+      } else if (!getAuthToken()) {
+        // Token was invalidated
         setUser(null);
         setMembership(null);
       }
-    } else {
-      setUser(null);
-      setMembership(null);
+    } catch {
+      // Retain cached user data on transient network error
     }
   }, []);
 
+  // Hydrate immediately from cache on mount without waiting for network
+  React.useEffect(() => {
+    setMounted(true);
+    const token = getAuthToken();
+    if (token) {
+      const cachedUser = getCachedUser();
+      const cachedMem = getCachedMembership();
+      if (cachedUser) setUser(cachedUser);
+      if (cachedMem) setMembership(cachedMem);
+    }
+    loadUser();
+  }, [loadUser]);
+
+  // Revalidate on route changes
   React.useEffect(() => {
     loadUser();
   }, [loadUser, pathname]);
@@ -139,7 +164,9 @@ export function Header({ onOpenHistory, onOpenSettings }: HeaderProps) {
           {/* User Status & Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Membership Pill */}
-            {membership?.isActive ? (
+            {!mounted ? (
+              <div className="hidden sm:block w-28 h-6 rounded-full bg-[#EBE5DC]/40 animate-pulse" />
+            ) : membership?.isActive ? (
               <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-[#ECFDF5] border border-[#A7F3D0] rounded-full text-xs font-semibold text-[#065F46]">
                 <Sparkles className="w-3.5 h-3.5 text-[#059669]" />
                 <span>{membership.remainingCredits} Credits</span>
@@ -177,12 +204,14 @@ export function Header({ onOpenHistory, onOpenSettings }: HeaderProps) {
             )}
 
             {/* Auth Button */}
-            {user ? (
+            {!mounted ? (
+              <div className="w-20 h-8 rounded-lg bg-[#EBE5DC]/40 animate-pulse" />
+            ) : user ? (
               <div className="flex items-center gap-2 pl-2 border-l border-[#EBE5DC]">
                 {/* Mobile / Tablet Avatar Pill */}
                 <div
                   className="flex lg:hidden items-center justify-center w-7 h-7 rounded-full bg-[#1A1715] text-[#D8B77E] text-[11px] font-bold border border-[#3E3832]"
-                  title={`${user.name || user.email} (${membership?.plan?.name || "Free Explorer"})`}
+                  title={`${user.name || user.email} (${membership?.plan?.name || (membership?.isActive ? "Member" : "Free Explorer")})`}
                 >
                   {(user.name || user.email || "U")[0].toUpperCase()}
                 </div>
@@ -193,7 +222,7 @@ export function Header({ onOpenHistory, onOpenSettings }: HeaderProps) {
                     {user.name || user.email}
                   </span>
                   <span className="text-[10px] text-[#7A736B] uppercase tracking-wider">
-                    {membership?.plan?.name || "Free Explorer"}
+                    {membership?.plan?.name || (membership?.isActive ? "Member" : "Free Explorer")}
                   </span>
                 </div>
                 <Button
