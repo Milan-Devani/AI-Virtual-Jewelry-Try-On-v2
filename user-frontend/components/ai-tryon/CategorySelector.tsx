@@ -773,6 +773,25 @@ export function CategorySelector({
         title="Create Custom Jewelry Pair / Combo"
         description="Select multiple single jewelry pieces to dress onto the model together in a unified try-on (e.g. Jhumka + Anklet)."
         maxWidth="xl"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setIsPairModalOpen(false)}
+              className="px-3.5 py-1.5 text-xs font-semibold rounded-xl border border-[#DED6C9] bg-white text-[#7A736B] hover:text-[#1A1715] hover:bg-[#FAF7F2] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleApplyPairModal}
+              className="px-4 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-[#8C6428] via-[#B38541] to-[#8C6428] text-white shadow-md hover:brightness-110 active:scale-98 transition-all flex items-center gap-1.5"
+            >
+              <Check className="w-3.5 h-3.5" />
+              <span>Apply Pair Combination</span>
+            </button>
+          </>
+        }
       >
         <div className="space-y-2.5 sm:space-y-3">
           {/* Quick Presets */}
@@ -879,25 +898,6 @@ export function CategorySelector({
             <p className="text-[10px] text-[#8C847A] leading-tight pt-1 border-t border-[#E3DCD1]/80">
               ✨ Replaces any existing jewelry at these zones on the model and renders each item with master studio realism.
             </p>
-          </div>
-
-          {/* Modal Footer Actions */}
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#F0EBE3]">
-            <button
-              type="button"
-              onClick={() => setIsPairModalOpen(false)}
-              className="px-3.5 py-1.5 text-xs font-semibold rounded-xl border border-[#DED6C9] bg-white text-[#7A736B] hover:text-[#1A1715] hover:bg-[#FAF7F2] transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleApplyPairModal}
-              className="px-4 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-[#8C6428] via-[#B38541] to-[#8C6428] text-white shadow-md hover:brightness-110 active:scale-98 transition-all flex items-center gap-1.5"
-            >
-              <Check className="w-3.5 h-3.5" />
-              <span>Apply Pair Combination</span>
-            </button>
           </div>
         </div>
       </Modal>

@@ -8,6 +8,7 @@ interface ModalProps {
   title: string;
   description?: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
   maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl" | "4xl";
 }
 
@@ -17,6 +18,7 @@ export function Modal({
   title,
   description,
   children,
+  footer,
   maxWidth = "xl",
 }: ModalProps) {
   React.useEffect(() => {
@@ -56,11 +58,12 @@ export function Modal({
       <div className="min-h-full flex items-center justify-center p-3 sm:p-6 pointer-events-none">
         <div
           className={cn(
-            "relative w-full my-auto bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-[#E9E3DA] flex flex-col max-h-[calc(100vh-2.5rem)] sm:max-h-[86vh] z-10 pointer-events-auto animate-in zoom-in-95 duration-200",
+            "relative w-full my-auto bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-[#E9E3DA] flex flex-col max-h-[calc(100vh-2.5rem)] sm:max-h-[86vh] z-10 pointer-events-auto animate-in zoom-in-95 duration-200 overflow-hidden",
             maxWidthStyles[maxWidth]
           )}
         >
-          <div className="flex items-center justify-between px-5 sm:px-6 py-3 sm:py-3.5 border-b border-[#F0EBE3] shrink-0 bg-[#FCFAF7] rounded-t-2xl sm:rounded-t-3xl">
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 sm:px-6 py-3 sm:py-3.5 border-b border-[#F0EBE3] shrink-0 bg-[#FCFAF7]">
             <div>
               <h2 className="text-base sm:text-lg font-bold text-[#1A1715]">{title}</h2>
               {description && (
@@ -75,7 +78,18 @@ export function Modal({
               <X className="w-5 h-5" />
             </button>
           </div>
-          <div className="p-3.5 sm:p-5 overflow-y-auto overscroll-contain">{children}</div>
+
+          {/* Scrollable Content Body */}
+          <div className="p-3.5 sm:p-5 overflow-y-auto overscroll-contain flex-1 min-h-0 modal-scrollbar">
+            {children}
+          </div>
+
+          {/* Optional Fixed Bottom Footer */}
+          {footer && (
+            <div className="px-5 sm:px-6 py-3 border-t border-[#F0EBE3] shrink-0 bg-[#FCFAF7] flex items-center justify-end gap-2">
+              {footer}
+            </div>
+          )}
         </div>
       </div>
     </div>
