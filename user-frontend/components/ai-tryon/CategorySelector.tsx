@@ -13,6 +13,7 @@ import {
   Trash2,
   Check,
   Edit3,
+  ChevronDown,
 } from "lucide-react";
 import { Modal } from "../ui/dialog";
 
@@ -105,6 +106,130 @@ const MEN_CUSTOM_PRESETS = [
   { name: "Punjabi Heavy Kada", placement: "wrist" },
   { name: "Signet / Gemstone Ring", placement: "finger & hand" },
 ];
+
+interface JewelryItemSelectProps {
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+}
+
+function JewelryItemSelect({ value, onChange, disabled }: JewelryItemSelectProps) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  const selectedItem =
+    SINGLE_JEWELRY_ITEMS.find((i) => i.id === value) || SINGLE_JEWELRY_ITEMS[0];
+
+  React.useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className="relative flex-1 min-w-0" ref={containerRef}>
+      {/* Luxury Trigger Button */}
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setIsOpen((prev) => !prev)}
+        className={cn(
+          "w-full h-10 px-3 flex items-center justify-between text-left rounded-xl border bg-white transition-all duration-150 outline-none shadow-xs group",
+          isOpen
+            ? "border-[#B38541] ring-2 ring-[#B38541]/20 bg-[#FAF8F4]"
+            : "border-[#DFD7CC] hover:border-[#B38541] hover:bg-[#FDFCFB]"
+        )}
+      >
+        <div className="flex items-center gap-2 truncate pr-2">
+          <span className="text-xs font-bold text-[#1A1715] truncate">
+            {selectedItem.name}
+          </span>
+        </div>
+
+        <ChevronDown
+          className={cn(
+            "w-4 h-4 text-[#8C6428] shrink-0 transition-transform duration-200",
+            isOpen && "transform rotate-180 text-[#B38541]"
+          )}
+        />
+      </button>
+
+      {/* Luxury Dropdown Menu */}
+      {isOpen && (
+        <div
+          role="listbox"
+          className="absolute left-0 right-0 sm:left-0 sm:w-[360px] max-w-[95vw] mt-1.5 py-1.5 bg-[#FFFEFD] border border-[#DFC9A8] rounded-2xl shadow-2xl shadow-stone-900/15 max-h-64 overflow-y-auto z-50 animate-in fade-in-0 zoom-in-95 duration-150 ring-1 ring-black/5 overscroll-contain"
+        >
+          {ITEM_GROUPS.map((groupName) => {
+            const groupItems = SINGLE_JEWELRY_ITEMS.filter((item) => item.group === groupName);
+            if (groupItems.length === 0) return null;
+
+            return (
+              <div key={groupName} className="mb-1.5 last:mb-0">
+                <div className="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#8C6428] bg-[#FAF5EB] border-y border-[#F3EAD9]/80 flex items-center gap-1.5">
+                  <Sparkles className="w-2.5 h-2.5 text-[#B38541]" />
+                  <span>{groupName}</span>
+                </div>
+
+                <div className="px-1.5 pt-1 space-y-0.5">
+                  {groupItems.map((item) => {
+                    const isSelected = item.id === value;
+
+                    return (
+                      <div
+                        key={item.id}
+                        role="option"
+                        aria-selected={isSelected}
+                        onClick={() => {
+                          onChange(item.id);
+                          setIsOpen(false);
+                        }}
+                        className={cn(
+                          "flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer transition-all duration-100",
+                          isSelected
+                            ? "bg-[#FAF5EB] text-[#8C6428] font-bold border border-[#E9DFC8]"
+                            : "text-[#2C2723] hover:bg-[#F7F2EB] hover:text-[#1A1715]"
+                        )}
+                      >
+                        <div className="flex items-center gap-2 truncate pr-2">
+                          <span className="truncate">{item.name}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span
+                            className={cn(
+                              "text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded",
+                              isSelected
+                                ? "bg-[#EFE3CF] text-[#7A561E]"
+                                : "bg-[#F0EBE3] text-[#7A736B]"
+                            )}
+                          >
+                            {item.placement}
+                          </span>
+                          {isSelected && (
+                            <Check className="w-3.5 h-3.5 text-[#8C6428] shrink-0" />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function CategorySelector({
   selectedCategory,
@@ -700,29 +825,15 @@ export function CategorySelector({
                       {index + 1}
                     </span>
 
-                    {/* Dropdown Select with all single jewelry items */}
-                    <div className="relative flex-1 min-w-0">
-                      <select
-                        value={selectedId}
-                        onChange={(e) => handleUpdateDropdownItem(index, e.target.value)}
-                        className="w-full h-10 px-2 sm:px-3 py-1 text-xs font-semibold rounded-xl border border-[#D8CEBF] bg-white text-[#1A1715] focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-[#B38541] cursor-pointer shadow-xs truncate"
-                      >
-                        {ITEM_GROUPS.map((groupName) => (
-                          <optgroup key={groupName} label={`— ${groupName} —`}>
-                            {SINGLE_JEWELRY_ITEMS.filter(
-                              (item) => item.group === groupName
-                            ).map((item) => (
-                              <option key={item.id} value={item.id}>
-                                {item.name} ({item.placement.toUpperCase()})
-                              </option>
-                            ))}
-                          </optgroup>
-                        ))}
-                      </select>
-                    </div>
+                    {/* Luxury Themed Dropdown Select */}
+                    <JewelryItemSelect
+                      value={selectedId}
+                      onChange={(newId) => handleUpdateDropdownItem(index, newId)}
+                      disabled={disabled}
+                    />
 
                     {/* Anatomical Placement Badge */}
-                    <span className="hidden sm:inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-lg bg-[#FAF5EB] text-[#7A561E] border border-[#E3D6C1] shrink-0 min-w-[70px] text-center">
+                    <span className="hidden sm:inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-1.5 rounded-xl bg-[#FAF5EB] text-[#7A561E] border border-[#E3D6C1] shrink-0 min-w-[70px] text-center shadow-xs">
                       {itemObj.placement}
                     </span>
 
