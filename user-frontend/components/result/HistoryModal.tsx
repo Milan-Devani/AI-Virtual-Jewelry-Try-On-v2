@@ -120,6 +120,7 @@ export function HistoryModal({
               key={cat.id}
               type="button"
               onClick={() => setSelectedCategory(cat.id)}
+              title={`${cat.name} (${cat.placement.toUpperCase()}) — ${cat.description}`}
               className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                 selectedCategory === cat.id
                   ? "bg-[#1A1715] text-white"

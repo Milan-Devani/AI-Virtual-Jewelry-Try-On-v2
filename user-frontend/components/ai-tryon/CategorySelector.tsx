@@ -3,7 +3,7 @@
 import * as React from "react";
 import { JEWELRY_CATEGORIES } from "../../constants/categories";
 import { cn } from "../../lib/utils";
-import { Sparkles, PlusCircle, Wand2, User, UserCheck } from "lucide-react";
+import { Sparkles, PlusCircle, Wand2, User, UserCheck, Info } from "lucide-react";
 
 interface CategorySelectorProps {
   selectedCategory: string;
@@ -75,9 +75,21 @@ export function CategorySelector({
       {/* Top Header & Gender Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div className="flex items-center gap-2">
-          <label className="text-sm font-semibold text-[#1A1715] flex items-center gap-1.5">
-            <span>Jewelry Category</span>
-          </label>
+          {/* Main Category Label with Tooltip */}
+          <div className="group relative inline-flex items-center gap-1.5 cursor-pointer">
+            <label className="text-sm font-semibold text-[#1A1715] flex items-center gap-1.5 cursor-pointer">
+              <span>Jewelry Category</span>
+              <Info className="w-3.5 h-3.5 text-[#8C6428] hover:text-[#B38541] transition-colors" />
+            </label>
+            {/* Tooltip on main label */}
+            <div className="absolute bottom-[calc(100%+8px)] left-0 hidden group-hover:flex flex-col w-64 p-2.5 rounded-xl bg-[#1A1715] text-[#FBF9F5] shadow-xl border border-[#3E3832] z-50 pointer-events-none animate-in fade-in duration-150 text-left">
+              <span className="text-xs font-bold text-[#D8B77E] mb-0.5">Anatomical Placement AI</span>
+              <p className="text-[11px] leading-snug text-[#D1C7BA]">
+                Select the category of your jewelry product. The AI replaces any pre-existing jewelry on the model in this zone and renders the new piece with authentic studio realism.
+              </p>
+              <div className="absolute top-full left-4 -mt-1 w-2 h-2 rotate-45 bg-[#1A1715] border-r border-b border-[#3E3832]" />
+            </div>
+          </div>
 
           {/* Gender Filter Tabs */}
           <div className="flex items-center p-0.5 rounded-xl bg-[#F0EBE3] border border-[#E4DCD0]">
@@ -133,8 +145,9 @@ export function CategorySelector({
 
       {/* Grid of categories */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
-        {filteredCategories.map((cat) => {
+        {filteredCategories.map((cat, idx) => {
           const isSelected = selectedCategory === cat.id;
+          const isEvenCol = idx % 2 === 0;
 
           return (
             <button
@@ -142,21 +155,54 @@ export function CategorySelector({
               type="button"
               disabled={disabled}
               onClick={() => onSelectCategory(cat.id)}
+              title={`${cat.name} (${cat.placement.toUpperCase()}) — ${cat.description}`}
               className={cn(
-                "relative flex flex-col items-start p-3 rounded-xl border text-left transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-gold-500 disabled:opacity-50",
+                "group relative flex flex-col items-start p-3 rounded-xl border text-left transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-gold-500 disabled:opacity-50 hover:z-30",
                 isSelected
                   ? "border-[#B38541] bg-[#FAF5EB] shadow-sm ring-1 ring-[#B38541]/50"
                   : "border-[#E8E1D6] bg-white hover:border-[#D6CCC0] hover:bg-[#FDFBF8]"
               )}
             >
+              {/* Floating Luxury Tooltip */}
+              <div
+                className={cn(
+                  "absolute bottom-[calc(100%+8px)] hidden group-hover:flex flex-col w-56 sm:w-64 p-3 rounded-xl bg-[#1A1715] text-[#FBF9F5] shadow-2xl border border-[#3E3832] z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150 text-left",
+                  isEvenCol
+                    ? "left-0 sm:left-1/2 sm:-translate-x-1/2"
+                    : "right-0 sm:left-1/2 sm:-translate-x-1/2"
+                )}
+              >
+                <div className="flex items-center justify-between gap-1.5 mb-1.5">
+                  <span className="text-xs font-bold text-[#D8B77E] truncate">{cat.name}</span>
+                  <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-[#2D2721] text-[#E5C992] border border-[#483E32] shrink-0">
+                    {cat.placement}
+                  </span>
+                </div>
+                <p className="text-[11px] leading-snug text-[#D1C7BA]">{cat.description}</p>
+                <div className="mt-2 pt-1.5 border-t border-[#2E2822] flex items-center gap-1.5 text-[10px] text-[#A69B8D]">
+                  <Sparkles className="w-2.5 h-2.5 text-[#D8B77E] shrink-0" />
+                  <span>Auto-replaces pre-existing jewelry</span>
+                </div>
+                {/* Arrow pointer */}
+                <div
+                  className={cn(
+                    "absolute top-full -mt-1 w-2 h-2 rotate-45 bg-[#1A1715] border-r border-b border-[#3E3832]",
+                    isEvenCol
+                      ? "left-6 sm:left-1/2 sm:-translate-x-1/2"
+                      : "right-6 sm:left-1/2 sm:-translate-x-1/2"
+                  )}
+                />
+              </div>
+
               <div className="flex items-center justify-between w-full mb-1">
                 <span
                   className={cn(
-                    "text-xs font-semibold tracking-tight truncate pr-1",
+                    "text-xs font-semibold tracking-tight truncate pr-1 flex items-center gap-1",
                     isSelected ? "text-[#1A1715]" : "text-[#2E2A25]"
                   )}
                 >
-                  {cat.name}
+                  <span className="truncate">{cat.name}</span>
+                  <Info className="w-3 h-3 text-[#A89F91] group-hover:text-[#B38541] transition-colors shrink-0 opacity-70 group-hover:opacity-100" />
                 </span>
                 <span
                   className={cn(
@@ -181,18 +227,37 @@ export function CategorySelector({
           );
         })}
 
-        {/* Custom Category Card */}
+        {/* Custom Category Card with Tooltip */}
         <button
           type="button"
           disabled={disabled}
           onClick={() => onSelectCategory("custom")}
+          title="Custom Category: Define any custom jewelry piece and custom anatomical placement"
           className={cn(
-            "relative flex flex-col items-start p-3 rounded-xl border text-left transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-gold-500 disabled:opacity-50",
+            "group relative flex flex-col items-start p-3 rounded-xl border text-left transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-gold-500 disabled:opacity-50 hover:z-30",
             isCustomSelected
               ? "border-[#B38541] bg-[#FAF5EB] shadow-sm ring-1 ring-[#B38541]/50"
               : "border-dashed border-[#D6CCC0] bg-[#FCFAF7] hover:border-[#B38541] hover:bg-[#FAF6EF]"
           )}
         >
+          {/* Floating Tooltip */}
+          <div className="absolute bottom-[calc(100%+8px)] right-0 sm:left-1/2 sm:-translate-x-1/2 hidden group-hover:flex flex-col w-56 sm:w-64 p-3 rounded-xl bg-[#1A1715] text-[#FBF9F5] shadow-2xl border border-[#3E3832] z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150 text-left">
+            <div className="flex items-center justify-between gap-1.5 mb-1.5">
+              <span className="text-xs font-bold text-[#D8B77E]">Custom Category</span>
+              <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-[#2D2721] text-[#E5C992] border border-[#483E32] shrink-0">
+                CUSTOM
+              </span>
+            </div>
+            <p className="text-[11px] leading-snug text-[#D1C7BA]">
+              Define any unique jewelry piece (e.g. Nath, Kamarbandh, Brooch) and its custom anatomical body placement.
+            </p>
+            <div className="mt-2 pt-1.5 border-t border-[#2E2822] flex items-center gap-1.5 text-[10px] text-[#A69B8D]">
+              <Sparkles className="w-2.5 h-2.5 text-[#D8B77E] shrink-0" />
+              <span>Tailored AI placement mapping</span>
+            </div>
+            <div className="absolute top-full right-6 sm:left-1/2 sm:-translate-x-1/2 -mt-1 w-2 h-2 rotate-45 bg-[#1A1715] border-r border-b border-[#3E3832]" />
+          </div>
+
           <div className="flex items-center justify-between w-full mb-1">
             <span
               className={cn(
@@ -202,6 +267,7 @@ export function CategorySelector({
             >
               <PlusCircle className="w-3.5 h-3.5 text-[#B38541]" />
               <span>Custom Category</span>
+              <Info className="w-3 h-3 text-[#A89F91] group-hover:text-[#B38541] transition-colors shrink-0 opacity-70 group-hover:opacity-100" />
             </span>
             <span
               className={cn(
@@ -251,6 +317,7 @@ export function CategorySelector({
                   key={preset.name}
                   type="button"
                   onClick={() => handleApplyPreset(preset)}
+                  title={`Target body placement: ${preset.placement}`}
                   className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-[#F2EDE4] hover:bg-[#E8DFC9] text-[#2C2723] transition-colors border border-[#E2DAD0]"
                 >
                   {preset.name}
@@ -262,9 +329,20 @@ export function CategorySelector({
           {/* Inputs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <div className="space-y-1">
-              <label className="text-xs font-medium text-[#524B43]">
-                Custom Category Name
-              </label>
+              <div className="group relative inline-flex items-center gap-1 cursor-pointer">
+                <label className="text-xs font-medium text-[#524B43] flex items-center gap-1 cursor-pointer">
+                  <span>Custom Category Name</span>
+                  <Info className="w-3 h-3 text-[#A89F91] hover:text-[#B38541] transition-colors" />
+                </label>
+                {/* Floating Tooltip */}
+                <div className="absolute bottom-[calc(100%+6px)] left-0 hidden group-hover:flex flex-col w-56 p-2 rounded-xl bg-[#1A1715] text-[#FBF9F5] shadow-xl border border-[#3E3832] z-50 pointer-events-none text-left">
+                  <span className="text-[11px] font-bold text-[#D8B77E]">Category Name</span>
+                  <p className="text-[10px] text-[#D1C7BA] leading-tight">
+                    Type of jewelry piece to wear, e.g. Nath, Brooch, Kamarbandh, or Ring.
+                  </p>
+                  <div className="absolute top-full left-4 -mt-1 w-2 h-2 rotate-45 bg-[#1A1715] border-r border-b border-[#3E3832]" />
+                </div>
+              </div>
               <input
                 type="text"
                 value={customCategoryName}
@@ -279,9 +357,20 @@ export function CategorySelector({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-[#524B43]">
-                Placement Target on Body
-              </label>
+              <div className="group relative inline-flex items-center gap-1 cursor-pointer">
+                <label className="text-xs font-medium text-[#524B43] flex items-center gap-1 cursor-pointer">
+                  <span>Placement Target on Body</span>
+                  <Info className="w-3 h-3 text-[#A89F91] hover:text-[#B38541] transition-colors" />
+                </label>
+                {/* Floating Tooltip */}
+                <div className="absolute bottom-[calc(100%+6px)] left-0 hidden group-hover:flex flex-col w-56 p-2 rounded-xl bg-[#1A1715] text-[#FBF9F5] shadow-xl border border-[#3E3832] z-50 pointer-events-none text-left">
+                  <span className="text-[11px] font-bold text-[#D8B77E]">Target Anatomy</span>
+                  <p className="text-[10px] text-[#D1C7BA] leading-tight">
+                    Specific anatomical zone on the model where this jewelry should be positioned.
+                  </p>
+                  <div className="absolute top-full left-4 -mt-1 w-2 h-2 rotate-45 bg-[#1A1715] border-r border-b border-[#3E3832]" />
+                </div>
+              </div>
               <input
                 type="text"
                 value={customPlacement}
