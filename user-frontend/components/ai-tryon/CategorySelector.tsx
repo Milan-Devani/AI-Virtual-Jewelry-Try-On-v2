@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { JEWELRY_CATEGORIES } from "../../constants/categories";
 import { cn } from "../../lib/utils";
 import {
@@ -115,29 +116,81 @@ interface JewelryItemSelectProps {
 
 function JewelryItemSelect({ value, onChange, disabled }: JewelryItemSelectProps) {
   const [isOpen, setIsOpen] = React.useState(false);
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
+  const menuRef = React.useRef<HTMLDivElement>(null);
+  const [menuCoords, setMenuCoords] = React.useState<{
+    top: number;
+    left: number;
+    width: number;
+    openUpward: boolean;
+  }>({
+    top: 0,
+    left: 0,
+    width: 340,
+    openUpward: false,
+  });
 
   const selectedItem =
     SINGLE_JEWELRY_ITEMS.find((i) => i.id === value) || SINGLE_JEWELRY_ITEMS[0];
 
+  const updatePosition = React.useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const dropdownHeight = 260;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUpward = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
+
+    const width = Math.max(rect.width, 340);
+    let left = rect.left;
+    if (left + width > window.innerWidth - 16) {
+      left = Math.max(16, window.innerWidth - width - 16);
+    }
+
+    setMenuCoords({
+      top: openUpward ? rect.top - 6 : rect.bottom + 6,
+      left,
+      width,
+      openUpward,
+    });
+  }, []);
+
   React.useEffect(() => {
+    if (!isOpen) return;
+
+    updatePosition();
+
     function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        triggerRef.current &&
+        !triggerRef.current.contains(target) &&
+        menuRef.current &&
+        !menuRef.current.contains(target)
+      ) {
         setIsOpen(false);
       }
     }
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
+
+    function handleScrollOrResize() {
+      updatePosition();
     }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("scroll", handleScrollOrResize, true);
+    window.addEventListener("resize", handleScrollOrResize);
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+      window.removeEventListener("resize", handleScrollOrResize);
     };
-  }, [isOpen]);
+  }, [isOpen, updatePosition]);
 
   return (
-    <div className="relative flex-1 min-w-0" ref={containerRef}>
+    <div className="relative flex-1 min-w-0">
       {/* Luxury Trigger Button */}
       <button
+        ref={triggerRef}
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen((prev) => !prev)}
@@ -162,71 +215,85 @@ function JewelryItemSelect({ value, onChange, disabled }: JewelryItemSelectProps
         />
       </button>
 
-      {/* Luxury Dropdown Menu */}
-      {isOpen && (
-        <div
-          role="listbox"
-          className="absolute left-0 right-0 sm:left-0 sm:w-[360px] max-w-[95vw] mt-1.5 py-1.5 bg-[#FFFEFD] border border-[#DFC9A8] rounded-2xl shadow-2xl shadow-stone-900/15 max-h-64 overflow-y-auto z-50 animate-in fade-in-0 zoom-in-95 duration-150 ring-1 ring-black/5 overscroll-contain"
-        >
-          {ITEM_GROUPS.map((groupName) => {
-            const groupItems = SINGLE_JEWELRY_ITEMS.filter((item) => item.group === groupName);
-            if (groupItems.length === 0) return null;
+      {/* Floating Luxury Dropdown Menu Portaled to document.body */}
+      {isOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={menuRef}
+            role="listbox"
+            style={{
+              position: "fixed",
+              left: `${menuCoords.left}px`,
+              ...(menuCoords.openUpward
+                ? { bottom: `${window.innerHeight - menuCoords.top}px` }
+                : { top: `${menuCoords.top}px` }),
+              width: `${menuCoords.width}px`,
+              maxWidth: "calc(100vw - 32px)",
+              zIndex: 999999,
+            }}
+            className="py-1.5 bg-[#FFFEFD] border border-[#DFC9A8] rounded-2xl shadow-2xl shadow-stone-900/25 max-h-64 overflow-y-auto ring-1 ring-black/5 overscroll-contain animate-in fade-in-0 zoom-in-95 duration-150 modal-scrollbar"
+          >
+            {ITEM_GROUPS.map((groupName) => {
+              const groupItems = SINGLE_JEWELRY_ITEMS.filter((item) => item.group === groupName);
+              if (groupItems.length === 0) return null;
 
-            return (
-              <div key={groupName} className="mb-1.5 last:mb-0">
-                <div className="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#8C6428] bg-[#FAF5EB] border-y border-[#F3EAD9]/80 flex items-center gap-1.5">
-                  <Sparkles className="w-2.5 h-2.5 text-[#B38541]" />
-                  <span>{groupName}</span>
-                </div>
+              return (
+                <div key={groupName} className="mb-1.5 last:mb-0">
+                  <div className="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#8C6428] bg-[#FAF5EB] border-y border-[#F3EAD9]/80 flex items-center gap-1.5">
+                    <Sparkles className="w-2.5 h-2.5 text-[#B38541]" />
+                    <span>{groupName}</span>
+                  </div>
 
-                <div className="px-1.5 pt-1 space-y-0.5">
-                  {groupItems.map((item) => {
-                    const isSelected = item.id === value;
+                  <div className="px-1.5 pt-1 space-y-0.5">
+                    {groupItems.map((item) => {
+                      const isSelected = item.id === value;
 
-                    return (
-                      <div
-                        key={item.id}
-                        role="option"
-                        aria-selected={isSelected}
-                        onClick={() => {
-                          onChange(item.id);
-                          setIsOpen(false);
-                        }}
-                        className={cn(
-                          "flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer transition-all duration-100",
-                          isSelected
-                            ? "bg-[#FAF5EB] text-[#8C6428] font-bold border border-[#E9DFC8]"
-                            : "text-[#2C2723] hover:bg-[#F7F2EB] hover:text-[#1A1715]"
-                        )}
-                      >
-                        <div className="flex items-center gap-2 truncate pr-2">
-                          <span className="truncate">{item.name}</span>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span
-                            className={cn(
-                              "text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded",
-                              isSelected
-                                ? "bg-[#EFE3CF] text-[#7A561E]"
-                                : "bg-[#F0EBE3] text-[#7A736B]"
-                            )}
-                          >
-                            {item.placement}
-                          </span>
-                          {isSelected && (
-                            <Check className="w-3.5 h-3.5 text-[#8C6428] shrink-0" />
+                      return (
+                        <div
+                          key={item.id}
+                          role="option"
+                          aria-selected={isSelected}
+                          onClick={() => {
+                            onChange(item.id);
+                            setIsOpen(false);
+                          }}
+                          className={cn(
+                            "flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer transition-all duration-100",
+                            isSelected
+                              ? "bg-[#FAF5EB] text-[#8C6428] font-bold border border-[#E9DFC8]"
+                              : "text-[#2C2723] hover:bg-[#F7F2EB] hover:text-[#1A1715]"
                           )}
+                        >
+                          <div className="flex items-center gap-2 truncate pr-2">
+                            <span className="truncate">{item.name}</span>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span
+                              className={cn(
+                                "text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded",
+                                isSelected
+                                  ? "bg-[#EFE3CF] text-[#7A561E]"
+                                  : "bg-[#F0EBE3] text-[#7A736B]"
+                              )}
+                            >
+                              {item.placement}
+                            </span>
+                            {isSelected && (
+                              <Check className="w-3.5 h-3.5 text-[#8C6428] shrink-0" />
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
@@ -828,7 +895,7 @@ export function CategorySelector({
               </span>
             </div>
 
-            <div className="space-y-1.5 max-h-[180px] sm:max-h-[210px] overflow-y-auto pr-0.5">
+            <div className="space-y-2">
               {pairItemIds.map((selectedId, index) => {
                 const itemObj =
                   SINGLE_JEWELRY_ITEMS.find((i) => i.id === selectedId) ||
