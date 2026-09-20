@@ -1,10 +1,22 @@
 import * as React from "react";
-import { Download, RefreshCw, SlidersHorizontal, Image as ImageIcon, Sparkles, Check } from "lucide-react";
+import {
+  Download,
+  RefreshCw,
+  SlidersHorizontal,
+  Image as ImageIcon,
+  Sparkles,
+  Video,
+  Play,
+  Pause,
+  Film,
+  Check,
+  Share2,
+} from "lucide-react";
 import { TryOnGenerationResult } from "../../types";
 import { Button } from "../ui/button";
 import { ComparisonSlider } from "./ComparisonSlider";
 import { generateDownloadFilename } from "../../lib/utils";
-import { normalizeMediaUrl } from "../../services/api";
+import { normalizeMediaUrl, generateVideoApi, GeneratedVideoResult } from "../../services/api";
 import { toast } from "sonner";
 
 interface ResultSectionProps {
@@ -13,23 +25,35 @@ interface ResultSectionProps {
   isRegenerating?: boolean;
 }
 
+type MotionStyle = "head-turn" | "editorial-smile" | "subtle-sparkle" | "runway-pose";
+type VideoAspectRatio = "9:16" | "4:5" | "16:9";
+
 export function ResultSection({
   result,
   onRegenerate,
   isRegenerating,
 }: ResultSectionProps) {
-  const [viewMode, setViewMode] = React.useState<"result" | "compare">("compare");
+  const [viewMode, setViewMode] = React.useState<"result" | "compare" | "video">("compare");
   const [isDownloading, setIsDownloading] = React.useState(false);
+
+  // Video Generation States
+  const [isGeneratingVideo, setIsGeneratingVideo] = React.useState(false);
+  const [videoResult, setVideoResult] = React.useState<GeneratedVideoResult | null>(null);
+  const [motionStyle, setMotionStyle] = React.useState<MotionStyle>("head-turn");
+  const [videoAspectRatio, setVideoAspectRatio] = React.useState<VideoAspectRatio>("9:16");
+  const [isVideoPlaying, setIsVideoPlaying] = React.useState(true);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
 
   const activeImageUrl = normalizeMediaUrl(result.imageUrl);
   const activeOriginalUrl = normalizeMediaUrl(result.modelImageUrl || result.jewelryImageUrl);
 
-  const handleDownload = async () => {
+  const handleDownload = async (urlToDownload?: string, customExt = "webp") => {
+    const targetUrl = urlToDownload || activeImageUrl;
     try {
       setIsDownloading(true);
-      const filename = generateDownloadFilename(result.category, result.createdAt);
+      const filename = `${result.category}-tryon-${Date.now()}.${customExt}`;
 
-      const response = await fetch(activeImageUrl);
+      const response = await fetch(targetUrl);
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
 
@@ -41,14 +65,54 @@ export function ResultSection({
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
 
-      toast.success("Try-on image downloaded successfully!", {
+      toast.success(`${customExt.toUpperCase()} downloaded successfully!`, {
         description: `Saved as ${filename}`,
       });
     } catch (err) {
-      toast.error("Failed to download image directly. Opening in new tab instead.");
-      window.open(activeImageUrl, "_blank");
+      toast.error("Opening media in new tab instead.");
+      window.open(targetUrl, "_blank");
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  const handleGenerateVideo = async () => {
+    try {
+      setIsGeneratingVideo(true);
+      toast.info("Submitting AI Video request...", {
+        description: "Rendering photorealistic motion with Wan 2.1 (this usually takes 1-2 mins on free GPU).",
+      });
+
+      const video = await generateVideoApi({
+        imageUrl: result.imageUrl,
+        category: result.categoryName || result.category,
+        aspectRatio: videoAspectRatio,
+        motionStyle,
+        durationSeconds: 3,
+      });
+
+      setVideoResult(video);
+      setViewMode("video");
+      toast.success("AI Video generated successfully!", {
+        description: "1080p social media runway video is ready to play and download.",
+      });
+    } catch (err: any) {
+      toast.error("Video Generation Failed", {
+        description: err.message || "Please check Hugging Face server availability.",
+      });
+    } finally {
+      setIsGeneratingVideo(false);
+    }
+  };
+
+  const togglePlayVideo = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.play();
+      setIsVideoPlaying(true);
+    } else {
+      videoRef.current.pause();
+      setIsVideoPlaying(false);
     }
   };
 
@@ -75,31 +139,76 @@ export function ResultSection({
           <button
             type="button"
             onClick={() => setViewMode("compare")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${viewMode === "compare"
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              viewMode === "compare"
                 ? "bg-white text-[#1A1715] shadow-sm"
                 : "text-[#736D66] hover:text-[#1A1715]"
-              }`}
+            }`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
             <span>Before / After</span>
           </button>
+
           <button
             type="button"
             onClick={() => setViewMode("result")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${viewMode === "result"
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              viewMode === "result"
                 ? "bg-white text-[#1A1715] shadow-sm"
                 : "text-[#736D66] hover:text-[#1A1715]"
-              }`}
+            }`}
           >
             <ImageIcon className="w-3.5 h-3.5" />
             <span>Solo Result</span>
           </button>
+
+          {videoResult && (
+            <button
+              type="button"
+              onClick={() => setViewMode("video")}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                viewMode === "video"
+                  ? "bg-[#1A1715] text-[#D8B77E] shadow-sm"
+                  : "text-[#736D66] hover:text-[#1A1715]"
+              }`}
+            >
+              <Video className="w-3.5 h-3.5 text-[#D8B77E]" />
+              <span>AI Video</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* Main Visual Display */}
       <div className="py-6 flex justify-center">
-        {viewMode === "compare" ? (
+        {viewMode === "video" && videoResult ? (
+          <div className="relative w-full max-w-sm sm:max-w-md aspect-[9/16] rounded-3xl overflow-hidden border-2 border-[#D8B77E]/60 shadow-2xl bg-black flex items-center justify-center">
+            <video
+              ref={videoRef}
+              src={videoResult.videoUrl}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-cover cursor-pointer"
+              onClick={togglePlayVideo}
+            />
+
+            {/* Video overlay controls */}
+            <div className="absolute top-4 left-4 flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-[11px] font-bold text-white">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+              <span>AI RUNWAY 1080P</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={togglePlayVideo}
+              className="absolute bottom-4 right-4 p-3 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-white transition-transform active:scale-95"
+            >
+              {isVideoPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-white" />}
+            </button>
+          </div>
+        ) : viewMode === "compare" ? (
           <ComparisonSlider
             originalUrl={activeOriginalUrl}
             generatedUrl={activeImageUrl}
@@ -114,6 +223,78 @@ export function ResultSection({
               alt="Generated AI Try-On"
               className="w-full h-full object-cover"
             />
+          </div>
+        )}
+      </div>
+
+      {/* AI Video Creator Drawer Banner */}
+      <div className="my-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#FCFBF8] via-[#FAF6EE] to-[#F5EFE3] border border-[#E6DBCA] shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-lg bg-[#1A1715] text-[#D8B77E]">
+                <Film className="w-4 h-4" />
+              </span>
+              <h3 className="text-sm sm:text-base font-serif font-bold text-[#1A1715]">
+                Turn into AI Runway Video (Reels &amp; Shorts)
+              </h3>
+              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]">
+                Wan 2.1 Free
+              </span>
+            </div>
+            <p className="text-xs text-[#7A736B]">
+              Generates dynamic 60fps editorial motion with real skin pores, hair breeze, and physical jewelry sparkles.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Aspect Ratio Selector */}
+            <select
+              value={videoAspectRatio}
+              onChange={(e) => setVideoAspectRatio(e.target.value as VideoAspectRatio)}
+              disabled={isGeneratingVideo}
+              className="h-9 px-2.5 rounded-xl border border-[#D9CEBF] bg-white text-xs font-semibold text-[#1A1715] focus:outline-none focus:ring-2 focus:ring-[#B38541]"
+            >
+              <option value="9:16">9:16 Reels &amp; TikTok (1080p)</option>
+              <option value="4:5">4:5 Instagram Feed (2K)</option>
+              <option value="16:9">16:9 Landscape Video</option>
+            </select>
+
+            {/* Motion Style Selector */}
+            <select
+              value={motionStyle}
+              onChange={(e) => setMotionStyle(e.target.value as MotionStyle)}
+              disabled={isGeneratingVideo}
+              className="h-9 px-2.5 rounded-xl border border-[#D9CEBF] bg-white text-xs font-semibold text-[#1A1715] focus:outline-none focus:ring-2 focus:ring-[#B38541]"
+            >
+              <option value="head-turn">✨ Gentle Head Turn &amp; Sparkle</option>
+              <option value="editorial-smile">💎 Editorial Smile &amp; Gaze</option>
+              <option value="subtle-sparkle">🔍 Micro Caustic Glint</option>
+              <option value="runway-pose">💃 Runway Pose</option>
+            </select>
+
+            {/* Video Generate Button */}
+            <Button
+              variant="primary"
+              size="md"
+              disabled={isGeneratingVideo}
+              isLoading={isGeneratingVideo}
+              onClick={handleGenerateVideo}
+              className="flex items-center gap-2 bg-[#1A1715] hover:bg-[#2A2622] text-[#FBF9F5] border border-[#3E3832] px-4 font-bold text-xs"
+            >
+              <Video className="w-3.5 h-3.5 text-[#D8B77E]" />
+              <span>{isGeneratingVideo ? "Rendering..." : "Generate AI Video"}</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Video generating status banner */}
+        {isGeneratingVideo && (
+          <div className="mt-3 p-3 rounded-xl bg-white/80 border border-[#E5DAC6] flex items-center gap-3 animate-pulse">
+            <div className="w-3 h-3 rounded-full bg-[#B38541] animate-ping" />
+            <p className="text-xs text-[#7A6237] font-medium">
+              Generating high-resolution jewelry video via Wan 2.1 ZeroGPU. Simulating authentic light caustics and fine hair physics...
+            </p>
           </div>
         )}
       </div>
@@ -135,22 +316,37 @@ export function ResultSection({
             className="flex-1 sm:flex-none flex items-center gap-2"
           >
             <RefreshCw className="w-4 h-4" />
-            <span>Regenerate</span>
+            <span>Regenerate Image</span>
           </Button>
 
-          <Button
-            variant="gold"
-            size="md"
-            disabled={isDownloading}
-            isLoading={isDownloading}
-            onClick={handleDownload}
-            className="flex-1 sm:flex-none flex items-center gap-2 px-6"
-          >
-            <Download className="w-4 h-4" />
-            <span>Download</span>
-          </Button>
+          {viewMode === "video" && videoResult ? (
+            <Button
+              variant="gold"
+              size="md"
+              disabled={isDownloading}
+              isLoading={isDownloading}
+              onClick={() => handleDownload(videoResult.videoUrl, "mp4")}
+              className="flex-1 sm:flex-none flex items-center gap-2 px-6"
+            >
+              <Download className="w-4 h-4" />
+              <span>Download 1080p MP4</span>
+            </Button>
+          ) : (
+            <Button
+              variant="gold"
+              size="md"
+              disabled={isDownloading}
+              isLoading={isDownloading}
+              onClick={() => handleDownload()}
+              className="flex-1 sm:flex-none flex items-center gap-2 px-6"
+            >
+              <Download className="w-4 h-4" />
+              <span>Download HD</span>
+            </Button>
+          )}
         </div>
       </div>
     </section>
   );
 }
+

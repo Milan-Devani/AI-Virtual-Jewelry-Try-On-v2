@@ -59,6 +59,10 @@ const envSchema = z.object({
   MAX_UPLOAD_MB: z.string().default("8").transform((v) => parseInt(v, 10)),
   MAX_FILE_SIZE: z.string().default("8388608").transform((v) => parseInt(v, 10)),
   MAX_PAYMENT_SCREENSHOT_SIZE: z.string().default("5242880").transform((v) => parseInt(v, 10)),
+
+  // AI Video Generation
+  FAL_KEY: z.string().optional().default(""),
+  HF_TOKEN: z.string().optional().default(""),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -76,6 +80,10 @@ export const config = {
   gemini: {
     apiKey: process.env.GEMINI_KEY || process.env.GEMINI_API_KEY || "",
     imageModel: env.GEMINI_IMAGE_MODEL,
+  },
+  video: {
+    falKey: env.FAL_KEY || process.env.FAL_KEY || "",
+    hfToken: env.HF_TOKEN || process.env.HF_TOKEN || "",
   },
   storage: {
     provider: env.STORAGE_PROVIDER,

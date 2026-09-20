@@ -482,3 +482,47 @@ export async function deleteHistoryApi(id: string): Promise<void> {
     });
   } catch {}
 }
+
+export interface GenerateVideoParams {
+  imageUrl: string;
+  category?: string;
+  aspectRatio?: "9:16" | "4:5" | "16:9" | "1:1";
+  motionStyle?: "head-turn" | "editorial-smile" | "subtle-sparkle" | "runway-pose";
+  durationSeconds?: number;
+}
+
+export interface GeneratedVideoResult {
+  id: string;
+  videoUrl: string;
+  thumbnailUrl: string;
+  aspectRatio: string;
+  durationSeconds: number;
+  motionStyle: string;
+  prompt: string;
+  createdAt: string;
+}
+
+export async function generateVideoApi(params: GenerateVideoParams): Promise<GeneratedVideoResult> {
+  const token = getAuthToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE_URL}/video/generate`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(params),
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || data.error?.message || "Failed to generate video");
+  }
+
+  return {
+    ...data.data,
+    videoUrl: normalizeMediaUrl(data.data.videoUrl),
+  };
+}
+
