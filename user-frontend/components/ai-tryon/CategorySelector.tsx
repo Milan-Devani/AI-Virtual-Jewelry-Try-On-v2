@@ -195,10 +195,10 @@ export function CategorySelector({
     <div className="space-y-3.5">
       {/* Top Header & Gender Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
           {/* Main Category Label with Tooltip */}
           <div className="group relative inline-flex items-center gap-1.5 cursor-pointer">
-            <label className="text-sm font-semibold text-[#1A1715] flex items-center gap-1.5 cursor-pointer">
+            <label className="text-sm sm:text-base font-bold text-[#1A1715] flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
               <span>Jewelry Category</span>
               <Info className="w-3.5 h-3.5 text-[#8C6428] hover:text-[#B38541] transition-colors" />
             </label>
@@ -212,60 +212,60 @@ export function CategorySelector({
             </div>
           </div>
 
-          {/* Gender Filter Tabs */}
-          <div className="flex items-center p-0.5 rounded-xl bg-[#F0EBE3] border border-[#E4DCD0]">
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => setActiveGender("female")}
-              className={cn(
-                "px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150",
-                activeGender === "female"
-                  ? "bg-white text-[#8C6428] shadow-xs"
-                  : "text-[#7A736B] hover:text-[#1A1715]"
-              )}
-            >
-              ✨ Women
-            </button>
-
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => setActiveGender("male")}
-              className={cn(
-                "px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150",
-                activeGender === "male"
-                  ? "bg-white text-[#8C6428] shadow-xs"
-                  : "text-[#7A736B] hover:text-[#1A1715]"
-              )}
-            >
-              👑 Men
-            </button>
-
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => setActiveGender("all")}
-              className={cn(
-                "px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-150",
-                activeGender === "all"
-                  ? "bg-white text-[#8C6428] shadow-xs"
-                  : "text-[#7A736B] hover:text-[#1A1715]"
-              )}
-            >
-              All
-            </button>
-          </div>
+          <span className="hidden sm:inline-flex text-xs text-[#8C6428] font-medium items-center gap-1 bg-[#FAF5EB] px-2.5 py-0.5 rounded-full border border-[#EADBBE]">
+            <Sparkles className="w-3 h-3 text-[#B38541]" />
+            <span>Anatomical AI</span>
+          </span>
         </div>
 
-        <span className="text-xs text-[#8C6428] font-medium flex items-center gap-1">
-          <Sparkles className="w-3 h-3" />
-          Anatomical Placement AI
-        </span>
+        {/* Gender Filter Tabs */}
+        <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto p-0.5 rounded-xl bg-[#F0EBE3] border border-[#E4DCD0]">
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => setActiveGender("female")}
+            className={cn(
+              "flex-1 sm:flex-initial px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-150 text-center",
+              activeGender === "female"
+                ? "bg-white text-[#8C6428] shadow-xs"
+                : "text-[#7A736B] hover:text-[#1A1715]"
+            )}
+          >
+            ✨ Women
+          </button>
+
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => setActiveGender("male")}
+            className={cn(
+              "flex-1 sm:flex-initial px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-150 text-center",
+              activeGender === "male"
+                ? "bg-white text-[#8C6428] shadow-xs"
+                : "text-[#7A736B] hover:text-[#1A1715]"
+            )}
+          >
+            👑 Men
+          </button>
+
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => setActiveGender("all")}
+            className={cn(
+              "flex-1 sm:flex-initial px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-150 text-center",
+              activeGender === "all"
+                ? "bg-white text-[#8C6428] shadow-xs"
+                : "text-[#7A736B] hover:text-[#1A1715]"
+            )}
+          >
+            All
+          </button>
+        </div>
       </div>
 
-      {/* Grid of categories */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+      {/* Grid of categories with mobile-first readability */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-2.5">
         {filteredCategories.map((cat, idx) => {
           const isSelected = selectedCategory === cat.id;
           const isEvenCol = idx % 2 === 0;
@@ -278,13 +278,13 @@ export function CategorySelector({
               onClick={() => onSelectCategory(cat.id)}
               title={`${cat.name} (${cat.placement.toUpperCase()}) — ${cat.description}`}
               className={cn(
-                "group relative flex flex-col items-start p-3 rounded-xl border text-left transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-gold-500 disabled:opacity-50 hover:z-30",
+                "group relative flex flex-col justify-between items-start p-2.5 sm:p-3 rounded-2xl border text-left transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-gold-500 disabled:opacity-50 hover:z-30 min-h-[105px] sm:min-h-[115px] w-full",
                 isSelected
-                  ? "border-[#B38541] bg-[#FAF5EB] shadow-sm ring-1 ring-[#B38541]/50"
+                  ? "border-[#B38541] bg-[#FAF5EB] shadow-sm ring-1 ring-[#B38541]/60"
                   : "border-[#E8E1D6] bg-white hover:border-[#D6CCC0] hover:bg-[#FDFBF8]"
               )}
             >
-              {/* Floating Luxury Tooltip */}
+              {/* Floating Luxury Tooltip (Desktop Hover) */}
               <div
                 className={cn(
                   "absolute bottom-[calc(100%+8px)] hidden group-hover:flex flex-col w-56 sm:w-64 p-3 rounded-xl bg-[#1A1715] text-[#FBF9F5] shadow-2xl border border-[#3E3832] z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150 text-left",
@@ -315,31 +315,47 @@ export function CategorySelector({
                 />
               </div>
 
-              <div className="flex items-center justify-between w-full mb-1">
-                <span
-                  className={cn(
-                    "text-xs font-semibold tracking-tight truncate pr-1 flex items-center gap-1",
-                    isSelected ? "text-[#1A1715]" : "text-[#2E2A25]"
-                  )}
-                >
-                  <span className="truncate">{cat.name}</span>
-                  <Info className="w-3 h-3 text-[#A89F91] group-hover:text-[#B38541] transition-colors shrink-0 opacity-70 group-hover:opacity-100" />
-                </span>
-                <span
-                  className={cn(
-                    "text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded shrink-0",
-                    isSelected
-                      ? "bg-[#EFE3CF] text-[#7A561E]"
-                      : "bg-[#F3EEE7] text-[#7A736B]"
-                  )}
-                >
-                  {cat.placement}
-                </span>
+              {/* Card Header & Title Area: full-width so title never truncates */}
+              <div className="w-full">
+                <div className="flex items-start justify-between gap-1 w-full mb-1">
+                  <span
+                    className={cn(
+                      "text-xs sm:text-xs font-bold tracking-tight leading-snug break-words",
+                      isSelected ? "text-[#1A1715]" : "text-[#24201C]"
+                    )}
+                  >
+                    {cat.name}
+                  </span>
+                  <Info
+                    className={cn(
+                      "w-3 h-3 transition-colors shrink-0 mt-0.5",
+                      isSelected
+                        ? "text-[#B38541]"
+                        : "text-[#9E9589] group-hover:text-[#B38541]"
+                    )}
+                  />
+                </div>
+
+                {/* Placement Badge placed on its own row to avoid horizontal squishing */}
+                <div className="mb-1.5">
+                  <span
+                    className={cn(
+                      "inline-block text-[9px] sm:text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-md",
+                      isSelected
+                        ? "bg-[#EFE3CF] text-[#7A561E] border border-[#DFC9A8]"
+                        : "bg-[#F3EEE7] text-[#6E675F] border border-[#E9E2D7]"
+                    )}
+                  >
+                    {cat.placement}
+                  </span>
+                </div>
               </div>
+
+              {/* Description (2 lines allowed on mobile for effortless reading) */}
               <p
                 className={cn(
-                  "text-[11px] line-clamp-1 leading-snug",
-                  isSelected ? "text-[#7A561E]" : "text-[#8A837A]"
+                  "text-[10px] sm:text-[11px] line-clamp-2 leading-snug mt-auto",
+                  isSelected ? "text-[#7A561E]" : "text-[#7A736B]"
                 )}
               >
                 {cat.description}
@@ -355,9 +371,9 @@ export function CategorySelector({
           onClick={() => onSelectCategory("custom")}
           title="Custom Category: Define any custom jewelry piece and custom anatomical placement"
           className={cn(
-            "group relative flex flex-col items-start p-3 rounded-xl border text-left transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-gold-500 disabled:opacity-50 hover:z-30",
+            "group relative flex flex-col justify-between items-start p-2.5 sm:p-3 rounded-2xl border text-left transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-gold-500 disabled:opacity-50 hover:z-30 min-h-[105px] sm:min-h-[115px] w-full",
             isCustomSingleSelected
-              ? "border-[#B38541] bg-[#FAF5EB] shadow-sm ring-1 ring-[#B38541]/50"
+              ? "border-[#B38541] bg-[#FAF5EB] shadow-sm ring-1 ring-[#B38541]/60"
               : "border-dashed border-[#D6CCC0] bg-[#FCFAF7] hover:border-[#B38541] hover:bg-[#FAF6EF]"
           )}
         >
@@ -379,32 +395,38 @@ export function CategorySelector({
             <div className="absolute top-full left-6 sm:left-1/2 sm:-translate-x-1/2 -mt-1 w-2 h-2 rotate-45 bg-[#1A1715] border-r border-b border-[#3E3832]" />
           </div>
 
-          <div className="flex items-center justify-between w-full mb-1">
-            <span
-              className={cn(
-                "text-xs font-semibold tracking-tight flex items-center gap-1",
-                isCustomSingleSelected ? "text-[#1A1715]" : "text-[#524B43]"
-              )}
-            >
-              <PlusCircle className="w-3.5 h-3.5 text-[#B38541]" />
-              <span>Custom Category</span>
-              <Info className="w-3 h-3 text-[#A89F91] group-hover:text-[#B38541] transition-colors shrink-0 opacity-70 group-hover:opacity-100" />
-            </span>
-            <span
-              className={cn(
-                "text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded",
-                isCustomSingleSelected
-                  ? "bg-[#EFE3CF] text-[#7A561E]"
-                  : "bg-[#EFE9E0] text-[#8C6428]"
-              )}
-            >
-              SINGLE
-            </span>
+          <div className="w-full">
+            <div className="flex items-start justify-between gap-1 w-full mb-1">
+              <span
+                className={cn(
+                  "text-xs sm:text-xs font-bold tracking-tight flex items-center gap-1",
+                  isCustomSingleSelected ? "text-[#1A1715]" : "text-[#4A3F33]"
+                )}
+              >
+                <PlusCircle className="w-3.5 h-3.5 text-[#B38541] shrink-0" />
+                <span>Custom Category</span>
+              </span>
+              <Info className="w-3 h-3 text-[#9E9589] group-hover:text-[#B38541] shrink-0 mt-0.5" />
+            </div>
+
+            <div className="mb-1.5">
+              <span
+                className={cn(
+                  "inline-block text-[9px] sm:text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-md",
+                  isCustomSingleSelected
+                    ? "bg-[#EFE3CF] text-[#7A561E] border border-[#DFC9A8]"
+                    : "bg-[#EFE9E0] text-[#8C6428] border border-[#E3D8C8]"
+                )}
+              >
+                SINGLE PIECE
+              </span>
+            </div>
           </div>
+
           <p
             className={cn(
-              "text-[11px] line-clamp-1 leading-snug",
-              isCustomSingleSelected ? "text-[#7A561E]" : "text-[#8A837A]"
+              "text-[10px] sm:text-[11px] line-clamp-2 leading-snug mt-auto",
+              isCustomSingleSelected ? "text-[#7A561E]" : "text-[#7A736B]"
             )}
           >
             {activeGender === "male"
@@ -423,9 +445,9 @@ export function CategorySelector({
           }}
           title="Custom Pair / Combo Builder: Select multiple single jewelry items (e.g. Jhumka + Anklet)"
           className={cn(
-            "group relative flex flex-col items-start p-3 rounded-xl border text-left transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-gold-500 disabled:opacity-50 hover:z-30",
+            "group relative flex flex-col justify-between items-start p-2.5 sm:p-3 rounded-2xl border text-left transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-gold-500 disabled:opacity-50 hover:z-30 min-h-[105px] sm:min-h-[115px] w-full",
             isCustomComboSelected
-              ? "border-[#B38541] bg-[#FAF5EB] shadow-sm ring-1 ring-[#B38541]/50"
+              ? "border-[#B38541] bg-[#FAF5EB] shadow-sm ring-1 ring-[#B38541]/60"
               : "border-dashed border-[#C5A880] bg-[#FCFAF6] hover:border-[#B38541] hover:bg-[#FAF5EA]"
           )}
         >
@@ -447,32 +469,38 @@ export function CategorySelector({
             <div className="absolute top-full right-6 sm:left-1/2 sm:-translate-x-1/2 -mt-1 w-2 h-2 rotate-45 bg-[#1A1715] border-r border-b border-[#3E3832]" />
           </div>
 
-          <div className="flex items-center justify-between w-full mb-1">
-            <span
-              className={cn(
-                "text-xs font-semibold tracking-tight flex items-center gap-1",
-                isCustomComboSelected ? "text-[#1A1715]" : "text-[#4A3D2D]"
-              )}
-            >
-              <Layers className="w-3.5 h-3.5 text-[#B38541]" />
-              <span>Custom Pair / Combo</span>
-              <Info className="w-3 h-3 text-[#A89F91] group-hover:text-[#B38541] transition-colors shrink-0 opacity-70 group-hover:opacity-100" />
-            </span>
-            <span
-              className={cn(
-                "text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded",
-                isCustomComboSelected
-                  ? "bg-[#EFE3CF] text-[#7A561E]"
-                  : "bg-[#EFE7D8] text-[#8C6428]"
-              )}
-            >
-              PAIR / COMBO
-            </span>
+          <div className="w-full">
+            <div className="flex items-start justify-between gap-1 w-full mb-1">
+              <span
+                className={cn(
+                  "text-xs sm:text-xs font-bold tracking-tight flex items-center gap-1",
+                  isCustomComboSelected ? "text-[#1A1715]" : "text-[#4A3D2D]"
+                )}
+              >
+                <Layers className="w-3.5 h-3.5 text-[#B38541] shrink-0" />
+                <span>Custom Pair / Combo</span>
+              </span>
+              <Info className="w-3 h-3 text-[#9E9589] group-hover:text-[#B38541] shrink-0 mt-0.5" />
+            </div>
+
+            <div className="mb-1.5">
+              <span
+                className={cn(
+                  "inline-block text-[9px] sm:text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-md",
+                  isCustomComboSelected
+                    ? "bg-[#EFE3CF] text-[#7A561E] border border-[#DFC9A8]"
+                    : "bg-[#EFE7D8] text-[#8C6428] border border-[#E3D6C1]"
+                )}
+              >
+                PAIR / COMBO
+              </span>
+            </div>
           </div>
+
           <p
             className={cn(
-              "text-[11px] line-clamp-1 leading-snug",
-              isCustomComboSelected ? "text-[#7A561E] font-medium" : "text-[#8A837A]"
+              "text-[10px] sm:text-[11px] line-clamp-2 leading-snug mt-auto",
+              isCustomComboSelected ? "text-[#7A561E] font-medium" : "text-[#7A736B]"
             )}
           >
             {isCustomComboSelected && customCategoryName
@@ -665,7 +693,7 @@ export function CategorySelector({
                 return (
                   <div
                     key={index}
-                    className="flex items-center gap-2 p-2 rounded-xl bg-[#FCFAF6] border border-[#EBE2D5] animate-in fade-in duration-150"
+                    className="flex items-center gap-1.5 sm:gap-2 p-2 rounded-xl bg-[#FCFAF6] border border-[#EBE2D5] animate-in fade-in duration-150"
                   >
                     {/* Number Badge */}
                     <span className="w-6 h-6 rounded-lg bg-[#EFE9DF] text-[#7A6B58] text-xs font-bold flex items-center justify-center shrink-0">
@@ -673,11 +701,11 @@ export function CategorySelector({
                     </span>
 
                     {/* Dropdown Select with all single jewelry items */}
-                    <div className="relative flex-1">
+                    <div className="relative flex-1 min-w-0">
                       <select
                         value={selectedId}
                         onChange={(e) => handleUpdateDropdownItem(index, e.target.value)}
-                        className="w-full h-10 px-3 py-1 text-xs font-semibold rounded-xl border border-[#D8CEBF] bg-white text-[#1A1715] focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-[#B38541] cursor-pointer shadow-xs"
+                        className="w-full h-10 px-2 sm:px-3 py-1 text-xs font-semibold rounded-xl border border-[#D8CEBF] bg-white text-[#1A1715] focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-[#B38541] cursor-pointer shadow-xs truncate"
                       >
                         {ITEM_GROUPS.map((groupName) => (
                           <optgroup key={groupName} label={`— ${groupName} —`}>
@@ -694,7 +722,7 @@ export function CategorySelector({
                     </div>
 
                     {/* Anatomical Placement Badge */}
-                    <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1.5 rounded-lg bg-[#FAF5EB] text-[#7A561E] border border-[#E3D6C1] shrink-0 min-w-[75px] text-center">
+                    <span className="hidden sm:inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-lg bg-[#FAF5EB] text-[#7A561E] border border-[#E3D6C1] shrink-0 min-w-[70px] text-center">
                       {itemObj.placement}
                     </span>
 
@@ -704,7 +732,7 @@ export function CategorySelector({
                         type="button"
                         onClick={() => handleRemoveDropdown(index)}
                         title="Remove piece from combo"
-                        className="p-2 rounded-xl text-[#A69E94] hover:text-[#C93B3B] hover:bg-[#FDF2F2] transition-colors shrink-0"
+                        className="p-1.5 sm:p-2 rounded-xl text-[#A69E94] hover:text-[#C93B3B] hover:bg-[#FDF2F2] transition-colors shrink-0"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
