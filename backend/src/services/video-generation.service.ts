@@ -1,7 +1,8 @@
 import fs from "fs/promises";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
-import { Client } from "@gradio/client";
+import { Client, handle_file } from "@gradio/client";
+import sharp from "sharp";
 import { config } from "../config/env.config.js";
 import { logger } from "../utils/logger.js";
 import { AppError } from "../utils/errors.js";
@@ -25,18 +26,18 @@ export interface GenerateVideoResult {
   createdAt: string;
 }
 
-// Aspect ratio to resolution mapping (multiples of 32 required by Wan 2.1)
-function getDimensions(aspectRatio: string): { width: number; height: number } {
+// Aspect ratio to resolution mapping (optimal multiples of 16/32 for diffusion models)
+function getTargetDimensions(aspectRatio: string): { width: number; height: number } {
   switch (aspectRatio) {
     case "9:16":
-      // Vertical (Reels / TikTok / Shorts)
-      return { width: 512, height: 896 };
+      // Vertical (Reels / TikTok / YouTube Shorts)
+      return { width: 480, height: 832 };
     case "4:5":
       // Instagram Portrait Feed
-      return { width: 576, height: 704 };
+      return { width: 576, height: 720 };
     case "16:9":
       // Landscape Cinematic
-      return { width: 896, height: 512 };
+      return { width: 832, height: 480 };
     case "1:1":
     default:
       // Square
@@ -48,7 +49,7 @@ function getDimensions(aspectRatio: string): { width: number; height: number } {
 function buildVideoPrompt(category = "jewelry", motionStyle = "head-turn"): string {
   const motionDirectives: Record<string, string> = {
     "head-turn":
-      "The model slowly and elegantly turns her head toward the soft studio light, softly blinking, revealing subtle regal smile. Diamond and gold reflections shimmer naturally.",
+      "The model slowly and elegantly turns her head toward the soft studio light, softly blinking, revealing a subtle regal smile. Diamond and gold reflections shimmer naturally.",
     "editorial-smile":
       "Model gently tilts her chin up, looking into the camera with serene editorial confidence, soft eye contact, gentle breathing, jewelry catching warm studio highlights.",
     "subtle-sparkle":
@@ -68,97 +69,235 @@ function buildVideoPrompt(category = "jewelry", motionStyle = "head-turn"): stri
 }
 
 export class VideoGenerationService {
+  /**
+   * Resolve an image input into a local file buffer.
+   * Handles local filesystem shortcuts, relative URLs, and external URLs.
+   */
+  private async fetchImageBuffer(imageUrl: string): Promise<Buffer> {
+    // If it's a localhost or relative URL, try direct disk read first
+    let localPath: string | null = null;
+
+    if (imageUrl.startsWith("/")) {
+      localPath = path.resolve(process.cwd(), imageUrl.replace(/^\//, ""));
+    } else if (imageUrl.includes("localhost:4000/uploads/") || imageUrl.includes("127.0.0.1:4000/uploads/")) {
+      const sub = imageUrl.split("/uploads/")[1];
+      if (sub) {
+        localPath = path.resolve(process.cwd(), "uploads", sub);
+      }
+    }
+
+    if (localPath) {
+      try {
+        return await fs.readFile(localPath);
+      } catch {
+        // Fall back to HTTP fetch if direct disk access fails
+      }
+    }
+
+    // Standard HTTP fetch
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      throw new AppError("INVALID_IMAGE", `Could not retrieve source image: ${response.statusText}`, 400);
+    }
+    const arrayBuf = await response.arrayBuffer();
+    return Buffer.from(arrayBuf);
+  }
+
+  /**
+   * Pre-process source image using sharp:
+   * - Converts WebP/PNG to standard RGB JPEG
+   * - Resizes and crops to exact aspect ratio dimensions (multiples of 16/32)
+   * - Writes to a dedicated temp file for gradio upload
+   */
+  private async prepareImageFile(
+    sourceBuffer: Buffer,
+    aspectRatio: string,
+    tempDir: string
+  ): Promise<string> {
+    const { width, height } = getTargetDimensions(aspectRatio);
+    await fs.mkdir(tempDir, { recursive: true });
+    const targetFile = path.join(tempDir, `prepared_${Date.now()}.jpg`);
+
+    await sharp(sourceBuffer)
+      .resize(width, height, { fit: "cover", position: "center" })
+      .jpeg({ quality: 95 })
+      .toFile(targetFile);
+
+    return targetFile;
+  }
+
+  /**
+   * Attempt generation on a Gradio space with automatic failover
+   */
+  private async executeGradioPrediction(
+    spaceName: string,
+    hfToken: string,
+    imagePath: string,
+    prompt: string,
+    durationSeconds: number,
+    aspectRatio: string
+  ): Promise<string> {
+    logger.info({ spaceName }, "Connecting to Hugging Face Space for video generation...");
+    const client = await Client.connect(spaceName, { token: hfToken as any });
+    const imageHandle = handle_file(imagePath);
+
+    const negativePrompt =
+      "Bright tones, overexposed, static, blurred details, subtitles, style, works, paintings, images, static, overall gray, worst quality, low quality, JPEG compression residue, ugly, incomplete, extra fingers, poorly drawn hands, deformed, disfigured, misshapen limbs, watermark, text";
+
+    let result: any;
+
+    if (spaceName.includes("wan2-2-fp8da-aoti-faster")) {
+      // zerogpu-aoti/wan2-2-fp8da-aoti-faster
+      // params: [input_image, prompt, steps, negative_prompt, duration_seconds, guidance_scale, guidance_scale_2, seed, randomize_seed]
+      result = await client.predict("/generate_video", [
+        imageHandle,
+        prompt,
+        4, // fast 4-step induction
+        negativePrompt,
+        Math.min(Math.max(durationSeconds, 2), 3.5),
+        1.0, // guidance_scale
+        1.0, // guidance_scale_2
+        Math.floor(Math.random() * 1000000),
+        true, // randomize_seed
+      ]);
+    } else if (spaceName.includes("wan2-1-fast")) {
+      // multimodalart/wan2-1-fast
+      const { width, height } = getTargetDimensions(aspectRatio);
+      result = await client.predict("/generate_video", [
+        imageHandle,
+        prompt,
+        height,
+        width,
+        negativePrompt,
+        Math.min(Math.max(durationSeconds, 2), 3.4),
+        1.0,
+        4,
+        Math.floor(Math.random() * 1000000),
+        true,
+      ]);
+    } else {
+      // Generic fallback (r3gm or similar preview)
+      result = await client.predict("/generate_video", [
+        imageHandle,
+        prompt,
+        4,
+        negativePrompt,
+        Math.min(Math.max(durationSeconds, 2), 3.5),
+        1.0,
+        1.0,
+        Math.floor(Math.random() * 1000000),
+        true,
+      ]);
+    }
+
+    if (!result?.data || !result.data[0]) {
+      throw new Error(`Empty response received from ${spaceName}`);
+    }
+
+    const videoData = result.data[0];
+    const remoteUrl =
+      videoData?.video?.url ||
+      videoData?.url ||
+      (typeof videoData === "string" ? videoData : null);
+
+    if (!remoteUrl) {
+      throw new Error(`Invalid video output payload from ${spaceName}`);
+    }
+
+    return remoteUrl;
+  }
+
   async generateVideo(input: GenerateVideoInput): Promise<GenerateVideoResult> {
     const videoId = uuidv4();
     const aspectRatio = input.aspectRatio || "9:16";
     const motionStyle = input.motionStyle || "head-turn";
     const duration = Math.min(Math.max(input.durationSeconds || 3, 2), 5);
-    const { width, height } = getDimensions(aspectRatio);
     const prompt = buildVideoPrompt(input.category, motionStyle);
 
     logger.info(
-      { videoId, aspectRatio, motionStyle, duration, width, height },
-      "Starting AI video generation via Wan 2.1"
+      { videoId, aspectRatio, motionStyle, duration },
+      "Starting AI video try-on generation"
     );
-
-    // Resolve input image: Can be URL or local file path
-    let imagePayload: any;
-    let localImagePath: string | null = null;
-
-    if (input.imageUrl.startsWith("http://") || input.imageUrl.startsWith("https://")) {
-      // Fetch image buffer
-      const res = await fetch(input.imageUrl);
-      if (!res.ok) {
-        throw new AppError("INVALID_IMAGE", `Could not fetch source image: ${res.statusText}`, 400);
-      }
-      const buffer = await res.arrayBuffer();
-      imagePayload = new Blob([buffer], { type: "image/jpeg" });
-    } else {
-      // Local path in public uploads
-      const cleanPath = input.imageUrl.replace(/^\//, "");
-      const possiblePath = path.resolve(process.cwd(), cleanPath);
-      try {
-        const buffer = await fs.readFile(possiblePath);
-        imagePayload = new Blob([buffer], { type: "image/jpeg" });
-        localImagePath = possiblePath;
-      } catch (readErr) {
-        throw new AppError("NOT_FOUND", `Local try-on image not found at ${cleanPath}`, 404);
-      }
-    }
 
     const hfToken = config.video.hfToken || process.env.HF_TOKEN;
     if (!hfToken) {
-      throw new AppError("AI_PROVIDER_ERROR", "Hugging Face token (HF_TOKEN) is not configured in backend/.env", 500);
+      throw new AppError(
+        "AI_PROVIDER_ERROR",
+        "Hugging Face token (HF_TOKEN) is not configured in backend/.env",
+        500
+      );
     }
 
+    const tempDir = path.resolve(process.cwd(), "uploads", "temp", videoId);
+    let preparedJpgPath: string | null = null;
+
     try {
-      // Connect to Wan 2.1 Fast on Hugging Face (ZeroGPU, 100% free)
-      const app = await Client.connect("multimodalart/wan2-1-fast", {
-        token: hfToken as any,
-      });
+      // 1. Fetch & normalize source image
+      const sourceBuffer = await this.fetchImageBuffer(input.imageUrl);
+      preparedJpgPath = await this.prepareImageFile(sourceBuffer, aspectRatio, tempDir);
 
-      logger.info({ videoId }, "Connected to Hugging Face Wan 2.1 Space, submitting generation...");
+      // 2. High-availability Space Pool with automatic failover
+      const candidateSpaces = [
+        "zerogpu-aoti/wan2-2-fp8da-aoti-faster",
+        "r3gm/wan2-2-fp8da-aoti-preview",
+        "multimodalart/wan2-1-fast",
+      ];
 
-      const result: any = await app.predict("/generate_video", [
-        imagePayload,
-        prompt,
-        height,
-        width,
-        "overexposed, static, blurred details, subtitles, style, works, paintings, images, static, overall gray, worst quality, low quality, JPEG compression residue, ugly, incomplete, extra fingers, poorly drawn hands, deformed, disfigured, misshapen limbs, watermark, text",
-        duration,
-        1.0, // guidance_scale
-        4,   // steps (fast distilled Wan 2.1)
-        Math.floor(Math.random() * 1000000), // random seed
-        true, // randomize_seed
-      ]);
+      let remoteVideoUrl: string | null = null;
+      let lastError: Error | null = null;
 
-      if (!result?.data || !result.data[0]) {
-        throw new Error("No video returned from Wan 2.1 generator");
+      for (const space of candidateSpaces) {
+        try {
+          logger.info({ space, videoId }, "Attempting video generation on candidate Space");
+          remoteVideoUrl = await this.executeGradioPrediction(
+            space,
+            hfToken,
+            preparedJpgPath,
+            prompt,
+            duration,
+            aspectRatio
+          );
+          if (remoteVideoUrl) {
+            logger.info({ space, videoId }, "Candidate Space successfully generated video!");
+            break;
+          }
+        } catch (spaceErr: any) {
+          logger.warn(
+            { space, videoId, error: spaceErr.message },
+            "Candidate Space failed, attempting next failover candidate..."
+          );
+          lastError = spaceErr;
+        }
       }
-
-      // result.data[0] contains the video file info
-      const videoData = result.data[0];
-      const remoteVideoUrl = videoData.video?.url || videoData.url || (typeof videoData === "string" ? videoData : null);
 
       if (!remoteVideoUrl) {
-        throw new Error("Invalid video payload received from model");
+        throw new Error(
+          lastError?.message || "All video generation candidate spaces were unavailable or busy."
+        );
       }
 
-      // Download and save locally in uploads/videos
+      // 3. Download the generated MP4 locally with auth header
+      const videoRes = await fetch(remoteVideoUrl, {
+        headers: { Authorization: `Bearer ${hfToken}` },
+      });
+
+      if (!videoRes.ok) {
+        throw new Error(`Failed to download rendered video from model host: ${videoRes.statusText}`);
+      }
+
       const outputDir = path.resolve(process.cwd(), "uploads", "videos", videoId);
       await fs.mkdir(outputDir, { recursive: true });
       const localVideoFile = path.join(outputDir, "runway.mp4");
 
-      const videoRes = await fetch(remoteVideoUrl);
-      if (!videoRes.ok) {
-        throw new Error(`Failed to download rendered video file: ${videoRes.statusText}`);
-      }
       const videoBuffer = await videoRes.arrayBuffer();
       await fs.writeFile(localVideoFile, Buffer.from(videoBuffer));
 
       const finalVideoUrl = `/uploads/videos/${videoId}/runway.mp4`;
 
-      logger.info({ videoId, finalVideoUrl }, "AI Video Try-On generation completed successfully");
+      logger.info(
+        { videoId, finalVideoUrl, sizeBytes: videoBuffer.byteLength },
+        "AI Video Try-On successfully rendered and saved"
+      );
 
       return {
         id: videoId,
@@ -172,7 +311,17 @@ export class VideoGenerationService {
       };
     } catch (err: any) {
       logger.error({ videoId, err: err.message }, "AI Video Try-On generation failed");
-      throw new AppError("VIDEO_GENERATION_FAILED", `Failed to generate video: ${err.message}`, 502);
+      throw new AppError(
+        "VIDEO_GENERATION_FAILED",
+        `Failed to generate video: ${err.message}`,
+        502
+      );
+    } finally {
+      // Clean up temporary pre-processed image
+      if (preparedJpgPath) {
+        fs.unlink(preparedJpgPath).catch(() => {});
+      }
+      fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
     }
   }
 }
