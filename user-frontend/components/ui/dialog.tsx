@@ -45,7 +45,7 @@ export function Modal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 !mt-0">
       {/* Clickable Backdrop */}
       <div
         className="fixed inset-0 transition-opacity"
@@ -60,23 +60,23 @@ export function Modal({
             maxWidthStyles[maxWidth]
           )}
         >
-        <div className="flex items-center justify-between px-5 sm:px-6 py-4 sm:py-5 border-b border-[#F0EBE3] shrink-0 bg-[#FCFAF7] rounded-t-2xl sm:rounded-t-3xl">
-          <div>
-            <h2 className="text-base sm:text-lg font-bold text-[#1A1715]">{title}</h2>
-            {description && (
-              <p className="text-xs text-[#7A736B] mt-0.5 leading-relaxed">{description}</p>
-            )}
+          <div className="flex items-center justify-between px-5 sm:px-6 py-3 sm:py-3.5 border-b border-[#F0EBE3] shrink-0 bg-[#FCFAF7] rounded-t-2xl sm:rounded-t-3xl">
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-[#1A1715]">{title}</h2>
+              {description && (
+                <p className="text-xs text-[#7A736B] mt-0.5 leading-relaxed">{description}</p>
+              )}
+            </div>
+            <button
+              onClick={onClose}
+              className="p-1.5 sm:p-2 rounded-xl text-[#7A736B] hover:text-[#1A1715] hover:bg-[#F0EBE3] transition-colors shrink-0 ml-2"
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-[#7A736B] hover:text-[#1A1715] hover:bg-[#F0EBE3] transition-colors shrink-0 ml-2"
-            aria-label="Close modal"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="p-3.5 sm:p-5 overflow-y-auto overscroll-contain">{children}</div>
         </div>
-        <div className="p-4 sm:p-6 overflow-y-auto overscroll-contain">{children}</div>
-      </div>
       </div>
     </div>
   );

@@ -774,21 +774,21 @@ export function CategorySelector({
         description="Select multiple single jewelry pieces to dress onto the model together in a unified try-on (e.g. Jhumka + Anklet)."
         maxWidth="xl"
       >
-        <div className="space-y-4">
+        <div className="space-y-2.5 sm:space-y-3">
           {/* Quick Presets */}
           <div>
-            <span className="text-[11px] font-semibold text-[#7A736B] block mb-1.5">
+            <span className="text-[10px] sm:text-[11px] font-semibold text-[#7A736B] block mb-1">
               Popular Quick Combos (Click to load):
             </span>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1 sm:gap-1.5">
               {POPULAR_PAIR_PRESETS.map((preset) => (
                 <button
                   key={preset.name}
                   type="button"
                   onClick={() => setPairItemIds(preset.itemIds)}
-                  className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[#F5EFE6] hover:bg-[#EFE5D5] text-[#7A561E] border border-[#E3D7C6] transition-colors flex items-center gap-1"
+                  className="px-2 py-0.5 rounded-lg text-[11px] font-medium bg-[#F5EFE6] hover:bg-[#EFE5D5] text-[#7A561E] border border-[#E3D7C6] transition-colors flex items-center gap-1"
                 >
-                  <Sparkles className="w-3 h-3 text-[#B38541]" />
+                  <Sparkles className="w-2.5 h-2.5 text-[#B38541]" />
                   <span>{preset.name}</span>
                 </button>
               ))}
@@ -796,20 +796,20 @@ export function CategorySelector({
           </div>
 
           {/* List of Dynamic Item Dropdowns */}
-          <div className="space-y-2.5">
+          <div className="space-y-1.5 sm:space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-[#1A1715] flex items-center gap-1.5">
                 <span>Coordinated Jewelry Pieces</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FAF3E6] text-[#8C6428] border border-[#E8DEC9] font-semibold">
-                  {pairItemIds.length} {pairItemIds.length === 1 ? "Piece" : "Pieces"} Selected
+                <span className="text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded-full bg-[#FAF3E6] text-[#8C6428] border border-[#E8DEC9] font-semibold">
+                  {pairItemIds.length} {pairItemIds.length === 1 ? "Piece" : "Pieces"}
                 </span>
               </label>
-              <span className="text-[11px] text-[#8C847A]">
-                Each piece has dedicated anatomical mapping
+              <span className="text-[10px] sm:text-[11px] text-[#8C847A]">
+                Dedicated anatomical placement
               </span>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5 max-h-[180px] sm:max-h-[210px] overflow-y-auto pr-0.5">
               {pairItemIds.map((selectedId, index) => {
                 const itemObj =
                   SINGLE_JEWELRY_ITEMS.find((i) => i.id === selectedId) ||
@@ -818,10 +818,10 @@ export function CategorySelector({
                 return (
                   <div
                     key={index}
-                    className="flex items-center gap-1.5 sm:gap-2 p-2 rounded-xl bg-[#FCFAF6] border border-[#EBE2D5] animate-in fade-in duration-150"
+                    className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-xl bg-[#FCFAF6] border border-[#EBE2D5] animate-in fade-in duration-150"
                   >
                     {/* Number Badge */}
-                    <span className="w-6 h-6 rounded-lg bg-[#EFE9DF] text-[#7A6B58] text-xs font-bold flex items-center justify-center shrink-0">
+                    <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-[#EFE9DF] text-[#7A6B58] text-[11px] sm:text-xs font-bold flex items-center justify-center shrink-0">
                       {index + 1}
                     </span>
 
@@ -833,7 +833,7 @@ export function CategorySelector({
                     />
 
                     {/* Anatomical Placement Badge */}
-                    <span className="hidden sm:inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-1.5 rounded-xl bg-[#FAF5EB] text-[#7A561E] border border-[#E3D6C1] shrink-0 min-w-[70px] text-center shadow-xs">
+                    <span className="hidden sm:inline-block text-[9px] uppercase font-bold tracking-wider px-2 py-1 rounded-xl bg-[#FAF5EB] text-[#7A561E] border border-[#E3D6C1] shrink-0 min-w-[65px] text-center shadow-xs">
                       {itemObj.placement}
                     </span>
 
@@ -843,9 +843,9 @@ export function CategorySelector({
                         type="button"
                         onClick={() => handleRemoveDropdown(index)}
                         title="Remove piece from combo"
-                        className="p-1.5 sm:p-2 rounded-xl text-[#A69E94] hover:text-[#C93B3B] hover:bg-[#FDF2F2] transition-colors shrink-0"
+                        className="p-1 sm:p-1.5 rounded-xl text-[#A69E94] hover:text-[#C93B3B] hover:bg-[#FDF2F2] transition-colors shrink-0"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </div>
@@ -857,45 +857,45 @@ export function CategorySelector({
             <button
               type="button"
               onClick={handleAddDropdown}
-              className="w-full py-2.5 px-3 border border-dashed border-[#B38541] hover:border-[#8C6428] rounded-xl text-xs font-semibold text-[#8C6428] hover:text-[#704F1D] bg-[#FAF5EB]/60 hover:bg-[#FAF5EB] transition-all flex items-center justify-center gap-1.5 shadow-xs"
+              className="w-full py-1.5 sm:py-2 px-3 border border-dashed border-[#B38541] hover:border-[#8C6428] rounded-xl text-xs font-semibold text-[#8C6428] hover:text-[#704F1D] bg-[#FAF5EB]/60 hover:bg-[#FAF5EB] transition-all flex items-center justify-center gap-1.5 shadow-xs"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
               <span>Add One More Jewelry Item to Pair</span>
             </button>
           </div>
 
           {/* Live Preview Summary Box */}
-          <div className="p-3.5 rounded-xl bg-[#F6F2EB] border border-[#E5DDD0] space-y-1.5">
+          <div className="p-2.5 sm:p-3 rounded-xl bg-[#F6F2EB] border border-[#E5DDD0] space-y-1">
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-[#1A1715]">Combo Name:</span>
-              <span className="font-bold text-[#8C6428]">{currentPairName}</span>
+              <span className="font-bold text-[#8C6428] truncate max-w-[280px]">{currentPairName}</span>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="font-medium text-[#7A736B]">Combined Body Placements:</span>
-              <span className="font-semibold text-[#2C2723] uppercase text-[11px] bg-[#EDE5D8] px-2 py-0.5 rounded-md">
+              <span className="font-medium text-[#7A736B]">Body Placements:</span>
+              <span className="font-semibold text-[#2C2723] uppercase text-[10px] bg-[#EDE5D8] px-1.5 py-0.5 rounded">
                 {currentPairPlacements}
               </span>
             </div>
-            <p className="text-[11px] text-[#8C847A] leading-snug pt-1 border-t border-[#E3DCD1]">
-              ✨ The AI replaces any pre-existing jewelry at these zones on the model and renders each item from your product reference with master studio realism.
+            <p className="text-[10px] text-[#8C847A] leading-tight pt-1 border-t border-[#E3DCD1]/80">
+              ✨ Replaces any existing jewelry at these zones on the model and renders each item with master studio realism.
             </p>
           </div>
 
           {/* Modal Footer Actions */}
-          <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[#F0EBE3]">
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#F0EBE3]">
             <button
               type="button"
               onClick={() => setIsPairModalOpen(false)}
-              className="px-4 py-2 text-xs font-semibold rounded-xl border border-[#DED6C9] bg-white text-[#7A736B] hover:text-[#1A1715] hover:bg-[#FAF7F2] transition-colors"
+              className="px-3.5 py-1.5 text-xs font-semibold rounded-xl border border-[#DED6C9] bg-white text-[#7A736B] hover:text-[#1A1715] hover:bg-[#FAF7F2] transition-colors"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={handleApplyPairModal}
-              className="px-5 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-[#8C6428] via-[#B38541] to-[#8C6428] text-white shadow-md hover:brightness-110 active:scale-98 transition-all flex items-center gap-1.5"
+              className="px-4 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-[#8C6428] via-[#B38541] to-[#8C6428] text-white shadow-md hover:brightness-110 active:scale-98 transition-all flex items-center gap-1.5"
             >
-              <Check className="w-4 h-4" />
+              <Check className="w-3.5 h-3.5" />
               <span>Apply Pair Combination</span>
             </button>
           </div>
