@@ -7,6 +7,8 @@ import {
   buildShotPrompt,
   PhotoshootShotType,
   PhotoshootPromptOptions,
+  MASTER_PROMPT_CORE,
+  JEWELRY_PRESERVATION_CORE,
 } from "../prompts/photoshoot.prompt.js";
 import { logger } from "../utils/logger.js";
 import { AppError } from "../utils/errors.js";
@@ -125,12 +127,12 @@ export class PhotoshootService {
           break;
         }
 
-        // Try one retry with simplified prompt
+        // Try one retry with master preservation prompt
         try {
           const retryGen = await geminiImageService.generateTryOn({
             jewelryBuffer: input.jewelryBuffer,
             jewelryMime: input.jewelryMime,
-            prompt: `High-end professional luxury jewelry photoshoot of the uploaded reference. Clean composition, sharp focus, 8k commercial quality.`,
+            prompt: `${MASTER_PROMPT_CORE}\n\n${JEWELRY_PRESERVATION_CORE}\n\nShot: ${shotConfig.title}. High-end professional luxury jewelry photoshoot of the uploaded reference. Exact jewelry preservation, clean luxury composition, razor-sharp focus, commercial quality.`,
             aspectRatio,
           });
 
