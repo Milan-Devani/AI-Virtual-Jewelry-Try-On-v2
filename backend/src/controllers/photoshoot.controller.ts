@@ -12,6 +12,10 @@ const generatePhotoshootSchema = z.object({
     .enum(["luxury-studio", "royal-bridal", "minimal-white", "dark-editorial"])
     .optional()
     .default("luxury-studio"),
+  displayStyle: z
+    .enum(["marble-flatlay", "linen-bust", "studio-pedestal"])
+    .optional()
+    .default("marble-flatlay"),
   aspectRatio: z.enum(["4:5", "1:1", "16:9"]).optional().default("4:5"),
   imageUrl: z.string().optional(),
 });
@@ -75,6 +79,7 @@ export class PhotoshootController {
         jewelryMime,
         category: parsed.data.category,
         theme: parsed.data.theme,
+        displayStyle: parsed.data.displayStyle,
         aspectRatio: parsed.data.aspectRatio,
         userId: (req as any).user?.id,
       });

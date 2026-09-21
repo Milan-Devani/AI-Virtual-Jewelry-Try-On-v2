@@ -8,9 +8,10 @@ import {
   TryOnMode,
   PhotoshootCampaignResult,
   PhotoshootShotResult,
+  PhotoshootDisplayStyle,
 } from "../types";
 
-export type { PhotoshootCampaignResult, PhotoshootShotResult };
+export type { PhotoshootCampaignResult, PhotoshootShotResult, PhotoshootDisplayStyle };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 const LOCAL_STORAGE_HISTORY_KEY = "jewelai_history_records";
@@ -556,6 +557,7 @@ export interface GeneratePhotoshootParams {
   imageUrl?: string;
   category?: string;
   theme?: "luxury-studio" | "royal-bridal" | "minimal-white" | "dark-editorial";
+  displayStyle?: PhotoshootDisplayStyle;
   aspectRatio?: "4:5" | "1:1" | "16:9";
 }
 
@@ -572,6 +574,7 @@ export async function generatePhotoshootApi(
     formData.append("image", params.imageFile);
     if (params.category) formData.append("category", params.category);
     if (params.theme) formData.append("theme", params.theme);
+    if (params.displayStyle) formData.append("displayStyle", params.displayStyle);
     if (params.aspectRatio) formData.append("aspectRatio", params.aspectRatio);
     body = formData;
   } else {

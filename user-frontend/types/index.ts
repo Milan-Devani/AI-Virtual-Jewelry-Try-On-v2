@@ -4,6 +4,8 @@ export type BackgroundType = "studio" | "luxury" | "minimal" | "outdoor";
 export type GenerationStatus = "idle" | "uploading" | "processing" | "completed" | "failed";
 export type TryOnMode = "custom-model" | "ai-model" | "image-to-video" | "multi-img";
 
+export type PhotoshootDisplayStyle = "marble-flatlay" | "linen-bust" | "studio-pedestal";
+
 export type PhotoshootShotType =
   | "hero-model"
   | "alternate-model"

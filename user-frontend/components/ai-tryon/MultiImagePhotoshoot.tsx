@@ -29,6 +29,7 @@ import { generatePhotoshootApi } from "../../services/api";
 import {
   PhotoshootCampaignResult,
   PhotoshootShotResult,
+  PhotoshootDisplayStyle,
 } from "../../types";
 import { toast } from "sonner";
 import { cn } from "../../lib/utils";
@@ -40,6 +41,32 @@ interface MultiImagePhotoshootProps {
 
 type PhotoshootTheme = "luxury-studio" | "royal-bridal" | "minimal-white" | "dark-editorial";
 type PhotoshootAspectRatio = "4:5" | "1:1" | "16:9";
+
+const DISPLAY_STYLE_OPTIONS: {
+  id: PhotoshootDisplayStyle;
+  title: string;
+  subtitle: string;
+  icon: string;
+}[] = [
+  {
+    id: "marble-flatlay",
+    title: "Travertine & Marble Slab",
+    subtitle: "Solid stone flatlay with dark contact shadows (Zero Floating)",
+    icon: "🏛️",
+  },
+  {
+    id: "linen-bust",
+    title: "Linen Display Neck Bust",
+    subtitle: "Draped around studio mannequin stand on a wooden table",
+    icon: "🏺",
+  },
+  {
+    id: "studio-pedestal",
+    title: "Ceramic Studio Pedestal",
+    subtitle: "Minimalist display block with authentic gravity",
+    icon: "🪨",
+  },
+];
 
 const THEME_OPTIONS: {
   id: PhotoshootTheme;
@@ -105,8 +132,8 @@ const GENERATION_STAGES = [
   { label: "Locking jewelry geometry, stone count & metal reflectance...", progress: 15 },
   { label: "Synthesizing Shot 1: Hero Model Luxury Campaign Portrait...", progress: 35 },
   { label: "Synthesizing Shot 2: Editorial Alternate Model Profile...", progress: 55 },
-  { label: "Synthesizing Shot 3: Commercial E-Commerce Product Hero...", progress: 75 },
-  { label: "Synthesizing Shot 4: 45° Side Depth & Setting Profile...", progress: 88 },
+  { label: "Synthesizing Shot 3: Commercial Product Hero with Grounded Shadows...", progress: 75 },
+  { label: "Synthesizing Shot 4: 45° Three-Quarter View on Solid Foundation...", progress: 88 },
   { label: "Synthesizing Shot 5: Ultra-Macro Gemstone & Diamond Detail...", progress: 98 },
 ];
 
@@ -118,6 +145,7 @@ export function MultiImagePhotoshoot({
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const [category, setCategory] = React.useState<string>("Necklaces & Pendants");
   const [theme, setTheme] = React.useState<PhotoshootTheme>("luxury-studio");
+  const [displayStyle, setDisplayStyle] = React.useState<PhotoshootDisplayStyle>("marble-flatlay");
   const [aspectRatio, setAspectRatio] = React.useState<PhotoshootAspectRatio>("4:5");
 
   const [isGenerating, setIsGenerating] = React.useState(false);
@@ -207,6 +235,7 @@ export function MultiImagePhotoshoot({
         imageUrl: !selectedFile && previewUrl ? previewUrl : undefined,
         category,
         theme,
+        displayStyle,
         aspectRatio,
       });
 
@@ -509,6 +538,46 @@ export function MultiImagePhotoshoot({
                   );
                 })}
               </div>
+            </div>
+
+            {/* Product Physical Grounding / Support Selector */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-[#3B342B]">Product Display Support</label>
+                <span className="text-[10px] text-[#10B981] font-semibold flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-[#10B981]" />
+                  Anti-Levitation Guarantee
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                {DISPLAY_STYLE_OPTIONS.map((ds) => {
+                  const isSel = displayStyle === ds.id;
+                  return (
+                    <button
+                      key={ds.id}
+                      type="button"
+                      onClick={() => setDisplayStyle(ds.id)}
+                      className={cn(
+                        "p-2.5 rounded-xl border text-left transition-all",
+                        isSel
+                          ? "border-[#B38541] bg-[#FAF5EC] shadow-sm ring-1 ring-[#B38541]/30"
+                          : "border-[#E8DFC8] bg-[#FDFBF7] hover:bg-[#F9F5EC]"
+                      )}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm">{ds.icon}</span>
+                        <p className="text-[11px] font-bold text-[#1A1715] truncate">{ds.title}</p>
+                      </div>
+                      <p className="text-[9px] text-[#7A6F60] mt-1 line-clamp-2 leading-tight">
+                        {ds.subtitle}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-[#7A6F60]">
+                Every shot is physically supported with real contact shadows. Zero floating in empty space.
+              </p>
             </div>
 
             {/* Aspect Ratio Selector */}

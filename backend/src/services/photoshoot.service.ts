@@ -7,6 +7,7 @@ import {
   buildShotPrompt,
   PhotoshootShotType,
   PhotoshootPromptOptions,
+  PhotoshootDisplayStyle,
   MASTER_PROMPT_CORE,
   JEWELRY_PRESERVATION_CORE,
 } from "../prompts/photoshoot.prompt.js";
@@ -18,6 +19,7 @@ export interface GeneratePhotoshootInput {
   jewelryMime: string;
   category?: string;
   theme?: "luxury-studio" | "royal-bridal" | "minimal-white" | "dark-editorial";
+  displayStyle?: PhotoshootDisplayStyle;
   aspectRatio?: "4:5" | "1:1" | "16:9";
   userId?: string;
 }
@@ -77,6 +79,7 @@ export class PhotoshootService {
     const promptOptions: PhotoshootPromptOptions = {
       category,
       theme,
+      displayStyle: input.displayStyle || "marble-flatlay",
     };
 
     const shots: PhotoshootShotResult[] = [];
