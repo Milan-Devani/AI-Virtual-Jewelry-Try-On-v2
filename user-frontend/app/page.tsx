@@ -206,7 +206,13 @@ export default function TryOnWorkspacePage() {
       });
 
       handleUpdateResult(response);
-      toast.success("AI virtual try-on generated successfully!", { icon: "💎" });
+      const remainingMsg = response.credits
+        ? `1 credit used • ${response.credits.remainingCredits} credits remaining`
+        : undefined;
+      toast.success("AI virtual try-on generated successfully!", {
+        icon: "💎",
+        description: remainingMsg,
+      });
 
       // Trigger luxury SweetAlert celebration
       showSweetTryOnReady(() => {

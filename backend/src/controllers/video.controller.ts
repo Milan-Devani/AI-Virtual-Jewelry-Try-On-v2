@@ -47,7 +47,10 @@ export class VideoController {
         );
       }
 
-      const result = await videoGenerationService.generateVideo(parsed.data);
+      const result = await videoGenerationService.generateVideo({
+        ...parsed.data,
+        userId: (req as any).user?.id,
+      });
 
       const response: ApiSuccessResponse<typeof result> = {
         success: true,

@@ -228,7 +228,46 @@ export async function generateTryOnApi(
     durationMs: data.data.durationMs,
   });
 
+  // Real-time credit synchronization
+  if (data.data?.credits) {
+    dispatchCreditsUpdated(data.data.credits);
+  }
+
   return data.data;
+}
+
+// ==================== REALTIME CREDITS EVENT ====================
+export const CREDITS_UPDATED_EVENT = "jewelai_credits_updated";
+
+export interface CreditsUpdateDetail {
+  remainingCredits: number;
+  usedCredits?: number;
+  totalCredits?: number;
+  deducted?: number;
+}
+
+export function dispatchCreditsUpdated(detail: CreditsUpdateDetail) {
+  if (typeof window !== "undefined") {
+    try {
+      const currentMem = getCachedMembership() || {};
+      const updatedMem = {
+        ...currentMem,
+        isActive: true,
+        remainingCredits: detail.remainingCredits,
+        usedCredits:
+          detail.usedCredits !== undefined
+            ? detail.usedCredits
+            : (currentMem.usedCredits || 0) + (detail.deducted || 1),
+        totalCredits:
+          detail.totalCredits !== undefined
+            ? detail.totalCredits
+            : (currentMem.totalCredits || 150),
+      };
+      setCachedMembership(updatedMem);
+    } catch {}
+
+    window.dispatchEvent(new CustomEvent(CREDITS_UPDATED_EVENT, { detail }));
+  }
 }
 
 // ==================== AUTH APIS ====================
@@ -514,6 +553,12 @@ export interface GeneratedVideoResult {
   motionStyle: string;
   prompt: string;
   createdAt: string;
+  credits?: {
+    totalCredits: number;
+    usedCredits: number;
+    remainingCredits: number;
+    deducted: number;
+  };
 }
 
 export async function generateVideoApi(params: GenerateVideoParams): Promise<GeneratedVideoResult> {
@@ -544,6 +589,11 @@ export async function generateVideoApi(params: GenerateVideoParams): Promise<Gen
   const data = await res.json();
   if (!res.ok || !data.success) {
     throw new Error(data.message || data.error?.message || "Failed to generate video");
+  }
+
+  // Real-time credit synchronization
+  if (data.data?.credits) {
+    dispatchCreditsUpdated(data.data.credits);
   }
 
   return {
@@ -596,6 +646,12 @@ export async function generatePhotoshootApi(
   }
 
   const campaign: PhotoshootCampaignResult = data.data;
+
+  // Real-time credit synchronization
+  if (campaign?.credits) {
+    dispatchCreditsUpdated(campaign.credits);
+  }
+
   return {
     ...campaign,
     sourceJewelryUrl: normalizeMediaUrl(campaign.sourceJewelryUrl),

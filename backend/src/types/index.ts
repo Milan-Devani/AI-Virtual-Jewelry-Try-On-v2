@@ -55,6 +55,12 @@ export interface GeneratedImageResult {
   imageSize: ImageSizeQuality;
   createdAt: string;
   durationMs?: number;
+  credits?: {
+    totalCredits: number;
+    usedCredits: number;
+    remainingCredits: number;
+    deducted: number;
+  };
 }
 
 export interface GenerationRecord {

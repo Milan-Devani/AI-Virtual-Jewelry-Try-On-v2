@@ -113,6 +113,132 @@ export class MembershipService {
 
     return updated;
   }
+
+  async deductCredits(params: {
+    userId: string;
+    amount: number;
+    category?: string;
+    mode?: string;
+    generationId?: string;
+    outputUrl?: string;
+    prompt?: string;
+    inputModelUrl?: string;
+    inputJewelryUrl?: string;
+    modelConfig?: any;
+  }): Promise<{
+    totalCredits: number;
+    usedCredits: number;
+    remainingCredits: number;
+    deducted: number;
+  }> {
+    const { userId, amount = 1 } = params;
+
+    if (!userId || userId === "anonymous") {
+      return { totalCredits: 0, usedCredits: 0, remainingCredits: 0, deducted: 0 };
+    }
+
+    if (!process.env.DATABASE_URL) {
+      const mockUser = mockStore.users.find((u) => u.id === userId || u.email === userId);
+      const isSuperAdmin =
+        userId === "admin-default-id" || userId.includes("admin") || mockUser?.role === "ADMIN";
+      const limit = isSuperAdmin ? 99999 : (mockUser?.generationLimit || (mockUser?.hasActivePlan ? 150 : 0));
+
+      if (mockUser) {
+        mockUser.totalGenerations = (mockUser.totalGenerations || 0) + amount;
+      }
+
+      const usedCredits = mockUser?.totalGenerations || 0;
+      const remainingCredits = isSuperAdmin ? 99999 : Math.max(0, limit - usedCredits);
+
+      return {
+        totalCredits: limit,
+        usedCredits,
+        remainingCredits,
+        deducted: amount,
+      };
+    }
+
+    // Database mode
+    let userRecord = null;
+    try {
+      userRecord = await prisma.user.findUnique({ where: { id: userId } });
+    } catch {}
+
+    const isSuperAdmin =
+      userRecord?.role === "ADMIN" || userId.includes("admin") || userId === "admin-default-id";
+
+    // 1. Record generation usage
+    try {
+      await prisma.generationUsage.create({
+        data: {
+          id: params.generationId || undefined,
+          userId,
+          category: params.category || "AI Generation",
+          mode: params.mode || "generation",
+          modelConfig: params.modelConfig ? (params.modelConfig as any) : undefined,
+          prompt: params.prompt,
+          inputModelUrl: params.inputModelUrl,
+          inputJewelryUrl: params.inputJewelryUrl,
+          outputImageUrl: params.outputUrl || "",
+          status: "success",
+          creditsUsed: amount,
+        },
+      });
+    } catch {
+      // If record already exists by ID, update it
+      try {
+        if (params.generationId) {
+          await prisma.generationUsage.update({
+            where: { id: params.generationId },
+            data: {
+              status: "success",
+              creditsUsed: amount,
+              outputImageUrl: params.outputUrl || undefined,
+            },
+          });
+        }
+      } catch {}
+    }
+
+    if (isSuperAdmin) {
+      return {
+        totalCredits: 99999,
+        usedCredits: 0,
+        remainingCredits: 99999,
+        deducted: amount,
+      };
+    }
+
+    // Get active subscription and calculate period usage
+    const sub = await prisma.subscription.findFirst({
+      where: { userId, status: "active" },
+      include: { plan: true },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const periodStart = sub?.currentPeriodStart || new Date(0);
+    const totalCredits = sub?.plan?.generationLimit || 0;
+
+    const usage = await prisma.generationUsage.aggregate({
+      where: {
+        userId,
+        status: "success",
+        createdAt: { gte: periodStart },
+      },
+      _sum: { creditsUsed: true },
+    });
+
+    const usedCredits = usage._sum.creditsUsed || 0;
+    const remainingCredits = Math.max(0, totalCredits - usedCredits);
+
+    return {
+      totalCredits,
+      usedCredits,
+      remainingCredits,
+      deducted: amount,
+    };
+  }
 }
 
 export const membershipService = new MembershipService();
+

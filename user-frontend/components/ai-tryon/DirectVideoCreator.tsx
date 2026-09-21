@@ -125,9 +125,12 @@ export function DirectVideoCreator({
 
       setVideoResult(result);
       setIsVideoPlaying(true);
+      const remainingMsg = result.credits
+        ? `1 credit used • ${result.credits.remainingCredits} credits remaining`
+        : "1080p Full HD motion video ready.";
       toast.success("AI Runway Video rendered successfully!", {
         icon: "✨",
-        description: "1080p Full HD motion video ready.",
+        description: remainingMsg,
       });
     } catch (err: any) {
       toast.error("Video Generation Failed", {

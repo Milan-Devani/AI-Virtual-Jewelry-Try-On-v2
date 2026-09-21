@@ -16,6 +16,7 @@ import {
   ImageSizeQuality,
 } from "../types/index.js";
 import { NotFoundError, ValidationError } from "../utils/errors.js";
+import { membershipService } from "../membership/membership.service.js";
 
 // In-memory generation store for resilience and fast lookups
 const memoryGenerationStore = new Map<string, GenerationRecord>();
@@ -170,42 +171,29 @@ export class TryOnService {
       record.updatedAt = new Date().toISOString();
       memoryGenerationStore.set(generationId, record);
 
-      // 10. Persist to database & deduct 1 credit
-      if (process.env.DATABASE_URL && userId && userId !== "anonymous") {
+      // 10. Persist to database & deduct 1 credit in real-time
+      let creditBalance = undefined;
+      if (userId && userId !== "anonymous") {
         try {
-          const { prisma } = await import("../config/prisma.js");
-          await prisma.generationUsage.create({
-            data: {
-              id: generationId,
-              userId,
-              category: categoryName,
-              mode: input.mode || "custom-model",
-              modelConfig: input.modelConfig ? (input.modelConfig as any) : undefined,
-              prompt,
-              inputModelUrl: storedModelUrl || undefined,
-              inputJewelryUrl: storedJewelry.url,
-              outputImageUrl: storedGenerated.url,
-              status: "success",
-              creditsUsed: 1,
-            },
+          creditBalance = await membershipService.deductCredits({
+            userId,
+            amount: 1,
+            generationId,
+            category: categoryName,
+            mode: input.mode || "custom-model",
+            modelConfig: input.modelConfig,
+            prompt,
+            inputModelUrl: storedModelUrl || undefined,
+            inputJewelryUrl: storedJewelry.url,
+            outputUrl: storedGenerated.url,
           });
-        } catch (dbErr) {
-          logger.warn({ dbErr }, "Failed to write generation usage to database");
-        }
-      } else if (userId && userId !== "anonymous") {
-        try {
-          const { mockStore } = await import("../mock/mockStore.js");
-          const user = mockStore.users.find((u) => u.id === userId);
-          if (user) {
-            user.totalGenerations = (user.totalGenerations || 0) + 1;
-          }
-        } catch (mockErr) {
-          logger.warn({ mockErr }, "Failed to update mock store generation count");
+        } catch (creditErr) {
+          logger.warn({ creditErr, userId }, "Failed to deduct credits for virtual try-on");
         }
       }
 
       logger.info(
-        { generationId, durationMs, status: "completed" },
+        { generationId, durationMs, status: "completed", creditBalance },
         "Virtual try-on generation successfully completed"
       );
 
@@ -221,6 +209,7 @@ export class TryOnService {
         imageSize,
         createdAt: record.createdAt,
         durationMs,
+        credits: creditBalance,
       };
     } catch (err: unknown) {
       record.status = "failed";

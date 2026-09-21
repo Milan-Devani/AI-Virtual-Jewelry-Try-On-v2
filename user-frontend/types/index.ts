@@ -30,6 +30,12 @@ export interface PhotoshootCampaignResult {
   totalShots: number;
   shots: PhotoshootShotResult[];
   createdAt: string;
+  credits?: {
+    totalCredits: number;
+    usedCredits: number;
+    remainingCredits: number;
+    deducted: number;
+  };
 }
 
 export interface AiModelConfig {
@@ -68,6 +74,12 @@ export interface TryOnGenerationResult {
   imageSize: ImageSizeQuality;
   createdAt: string;
   durationMs?: number;
+  credits?: {
+    totalCredits: number;
+    usedCredits: number;
+    remainingCredits: number;
+    deducted: number;
+  };
 }
 
 export interface GenerationRecord {

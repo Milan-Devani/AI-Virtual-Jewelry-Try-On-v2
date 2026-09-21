@@ -2,12 +2,20 @@ import { Router } from "express";
 import { videoController } from "../controllers/video.controller.js";
 import { singleImageUpload } from "../middleware/upload.js";
 import { aiGenerationLimiter } from "../middleware/rateLimiter.js";
+import { requireAuth } from "../auth/middleware/auth.middleware.js";
+import {
+  requireActiveMembership,
+  requireCredits,
+} from "../membership/middleware/membership.middleware.js";
 
 const router = Router();
 
 // POST /api/video/generate
 router.post(
   "/generate",
+  requireAuth,
+  requireActiveMembership,
+  requireCredits(1),
   aiGenerationLimiter,
   (req, res, next) => {
     // If multipart/form-data, process singleImageUpload middleware
@@ -22,3 +30,4 @@ router.post(
 );
 
 export { router as videoRouter };
+

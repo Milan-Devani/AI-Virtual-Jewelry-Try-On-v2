@@ -6,6 +6,7 @@ import sharp from "sharp";
 import { config } from "../config/env.config.js";
 import { logger } from "../utils/logger.js";
 import { AppError } from "../utils/errors.js";
+import { membershipService } from "../membership/membership.service.js";
 
 export interface GenerateVideoInput {
   imageUrl: string;
@@ -13,6 +14,7 @@ export interface GenerateVideoInput {
   aspectRatio?: "9:16" | "4:5" | "16:9" | "1:1";
   motionStyle?: "head-turn" | "editorial-smile" | "subtle-sparkle" | "runway-pose";
   durationSeconds?: number;
+  userId?: string;
 }
 
 export interface GenerateVideoResult {
@@ -24,6 +26,12 @@ export interface GenerateVideoResult {
   motionStyle: string;
   prompt: string;
   createdAt: string;
+  credits?: {
+    totalCredits: number;
+    usedCredits: number;
+    remainingCredits: number;
+    deducted: number;
+  };
 }
 
 // Aspect ratio to resolution mapping (optimal multiples of 16/32 for diffusion models)
@@ -294,8 +302,26 @@ export class VideoGenerationService {
 
       const finalVideoUrl = `/uploads/videos/${videoId}/runway.mp4`;
 
+      let creditBalance = undefined;
+      if (input.userId && input.userId !== "anonymous") {
+        try {
+          creditBalance = await membershipService.deductCredits({
+            userId: input.userId,
+            amount: 1,
+            generationId: videoId,
+            category: input.category || "jewelry",
+            mode: "image-to-video",
+            prompt,
+            inputJewelryUrl: input.imageUrl,
+            outputUrl: finalVideoUrl,
+          });
+        } catch (creditErr) {
+          logger.warn({ creditErr, userId: input.userId }, "Failed to deduct credits for video generation");
+        }
+      }
+
       logger.info(
-        { videoId, finalVideoUrl, sizeBytes: videoBuffer.byteLength },
+        { videoId, finalVideoUrl, sizeBytes: videoBuffer.byteLength, creditBalance },
         "AI Video Try-On successfully rendered and saved"
       );
 
@@ -308,6 +334,7 @@ export class VideoGenerationService {
         motionStyle,
         prompt,
         createdAt: new Date().toISOString(),
+        credits: creditBalance,
       };
     } catch (err: any) {
       logger.error({ videoId, err: err.message }, "AI Video Try-On generation failed");

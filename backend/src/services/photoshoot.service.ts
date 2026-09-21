@@ -13,6 +13,7 @@ import {
 } from "../prompts/photoshoot.prompt.js";
 import { logger } from "../utils/logger.js";
 import { AppError } from "../utils/errors.js";
+import { membershipService } from "../membership/membership.service.js";
 
 export interface GeneratePhotoshootInput {
   jewelryBuffer: Buffer;
@@ -41,6 +42,12 @@ export interface PhotoshootCampaignResult {
   totalShots: number;
   shots: PhotoshootShotResult[];
   createdAt: string;
+  credits?: {
+    totalCredits: number;
+    usedCredits: number;
+    remainingCredits: number;
+    deducted: number;
+  };
 }
 
 const DEFAULT_SHOT_TYPES: PhotoshootShotType[] = [
@@ -168,8 +175,27 @@ export class PhotoshootService {
       );
     }
 
+    const shotsCount = shots.length;
+    let creditBalance = undefined;
+    if (input.userId && input.userId !== "anonymous") {
+      try {
+        creditBalance = await membershipService.deductCredits({
+          userId: input.userId,
+          amount: shotsCount,
+          generationId: photoshootId,
+          category,
+          mode: "photoshoot",
+          prompt: `Jewelry photoshoot set of ${shotsCount} high-fidelity commercial shots (${theme})`,
+          inputJewelryUrl: sourceJewelryUrl,
+          outputUrl: shots[0]?.imageUrl,
+        });
+      } catch (creditErr) {
+        logger.warn({ creditErr, userId: input.userId }, "Failed to deduct credits for photoshoot campaign");
+      }
+    }
+
     logger.info(
-      { photoshootId, totalShots: shots.length },
+      { photoshootId, totalShots: shots.length, creditBalance },
       "Photoshoot campaign generated successfully"
     );
 
@@ -181,6 +207,7 @@ export class PhotoshootService {
       totalShots: shots.length,
       shots,
       createdAt: new Date().toISOString(),
+      credits: creditBalance,
     };
   }
 }

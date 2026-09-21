@@ -240,9 +240,12 @@ export function MultiImagePhotoshoot({
       });
 
       setCampaignResult(result);
+      const remainingMsg = result.credits
+        ? ` • ${result.credits.deducted || result.shots.length} credits used (${result.credits.remainingCredits} remaining)`
+        : "";
       toast.success("Photoshoot Campaign Generated!", {
         icon: "✨",
-        description: `Successfully synthesized ${result.shots.length} high-resolution commercial images.`,
+        description: `Synthesized ${result.shots.length} commercial shots${remainingMsg}.`,
       });
     } catch (err: any) {
       toast.error("Photoshoot Generation Failed", {

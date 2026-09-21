@@ -12,6 +12,7 @@ import {
   getAuthToken,
   normalizeMediaUrl,
   AUTH_CHANGE_EVENT,
+  CREDITS_UPDATED_EVENT,
 } from "../../services/api";
 import {
   Sparkles,
@@ -63,8 +64,35 @@ export default function DashboardPage() {
     const handleAuth = () => {
       fetchUserData();
     };
+    const handleCredits = (e: any) => {
+      const detail = e.detail;
+      if (!detail) return;
+      setProfileData((prev: any) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          membership: {
+            ...prev.membership,
+            remainingCredits: detail.remainingCredits,
+            usedCredits:
+              detail.usedCredits !== undefined
+                ? detail.usedCredits
+                : (prev.membership?.usedCredits || 0) + (detail.deducted || 1),
+            totalCredits:
+              detail.totalCredits !== undefined
+                ? detail.totalCredits
+                : prev.membership?.totalCredits,
+          },
+        };
+      });
+    };
+
     window.addEventListener(AUTH_CHANGE_EVENT, handleAuth);
-    return () => window.removeEventListener(AUTH_CHANGE_EVENT, handleAuth);
+    window.addEventListener(CREDITS_UPDATED_EVENT, handleCredits);
+    return () => {
+      window.removeEventListener(AUTH_CHANGE_EVENT, handleAuth);
+      window.removeEventListener(CREDITS_UPDATED_EVENT, handleCredits);
+    };
   }, [fetchUserData]);
 
   const membership = profileData?.membership;

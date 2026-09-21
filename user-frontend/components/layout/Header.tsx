@@ -14,8 +14,10 @@ import {
   getCachedMembership,
   AUTH_CHANGE_EVENT,
   OPEN_AUTH_EVENT,
+  CREDITS_UPDATED_EVENT,
 } from "../../services/api";
 import { showSweetConfirm, showSweetToast } from "../../lib/sweetalert";
+import { cn } from "../../lib/utils";
 
 interface HeaderProps {
   onOpenHistory?: () => void;
@@ -29,6 +31,8 @@ export function Header({ onOpenHistory, onOpenSettings }: HeaderProps) {
   const [user, setUser] = React.useState<any>(null);
   const [membership, setMembership] = React.useState<any>(null);
   const [mounted, setMounted] = React.useState(false);
+  const [isCreditDeducting, setIsCreditDeducting] = React.useState(false);
+  const [deductedAmount, setDeductedAmount] = React.useState(1);
 
   const loadUser = React.useCallback(async () => {
     const token = getAuthToken();
@@ -85,11 +89,43 @@ export function Header({ onOpenHistory, onOpenSettings }: HeaderProps) {
       setIsAuthOpen(true);
     };
 
+    const handleCreditsUpdate = (e: any) => {
+      const detail = e.detail;
+      if (!detail) return;
+
+      setMembership((prev: any) => {
+        if (!prev) {
+          return {
+            isActive: true,
+            remainingCredits: detail.remainingCredits,
+            totalCredits: detail.totalCredits || 150,
+            usedCredits: detail.usedCredits || 0,
+          };
+        }
+        return {
+          ...prev,
+          isActive: true,
+          remainingCredits: detail.remainingCredits,
+          usedCredits: detail.usedCredits !== undefined ? detail.usedCredits : prev.usedCredits,
+          totalCredits: detail.totalCredits !== undefined ? detail.totalCredits : prev.totalCredits,
+        };
+      });
+
+      // Animate the credit deduction
+      setDeductedAmount(detail.deducted || 1);
+      setIsCreditDeducting(true);
+      setTimeout(() => {
+        setIsCreditDeducting(false);
+      }, 2400);
+    };
+
     window.addEventListener(AUTH_CHANGE_EVENT, handleAuthChange);
     window.addEventListener(OPEN_AUTH_EVENT, handleOpenAuth);
+    window.addEventListener(CREDITS_UPDATED_EVENT, handleCreditsUpdate);
     return () => {
       window.removeEventListener(AUTH_CHANGE_EVENT, handleAuthChange);
       window.removeEventListener(OPEN_AUTH_EVENT, handleOpenAuth);
+      window.removeEventListener(CREDITS_UPDATED_EVENT, handleCreditsUpdate);
     };
   }, [loadUser]);
 
@@ -164,18 +200,41 @@ export function Header({ onOpenHistory, onOpenSettings }: HeaderProps) {
 
           {/* User Status & Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Membership Pill */}
+            {/* Membership Pill with Real-Time Credit Counter & Deduction Micro-Animation */}
             {!mounted ? (
-              <div className="hidden sm:block w-28 h-6 rounded-full bg-[#EBE5DC]/40 animate-pulse" />
+              <div className="w-24 sm:w-28 h-7 rounded-full bg-[#EBE5DC]/40 animate-pulse" />
             ) : membership?.isActive ? (
-              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-[#ECFDF5] border border-[#A7F3D0] rounded-full text-xs font-semibold text-[#065F46]">
-                <Sparkles className="w-3.5 h-3.5 text-[#059669]" />
-                <span>{membership.remainingCredits} Credits</span>
+              <div
+                className={cn(
+                  "relative flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-semibold transition-all duration-300 select-none",
+                  isCreditDeducting
+                    ? "bg-[#FEF3C7] border-2 border-[#D97706] text-[#92400E] scale-105 shadow-md ring-2 ring-[#F59E0B]/30"
+                    : "bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46]"
+                )}
+                title={`${membership.remainingCredits} credits available out of ${membership.totalCredits || 0}`}
+              >
+                <Sparkles
+                  className={cn(
+                    "w-3.5 h-3.5 transition-transform duration-500",
+                    isCreditDeducting ? "text-[#D97706] rotate-180 scale-110" : "text-[#059669]"
+                  )}
+                />
+                <span className="tabular-nums font-bold tracking-tight">
+                  {membership.remainingCredits}
+                </span>
+                <span className="hidden xs:inline">Credits</span>
+
+                {/* Floating Real-Time Deduction Badge */}
+                {isCreditDeducting && (
+                  <span className="absolute -bottom-5 right-0.5 text-[10px] font-black text-[#DC2626] bg-[#FEE2E2] px-1.5 py-0.5 rounded-full border border-[#FCA5A5] shadow-sm animate-bounce">
+                    -{deductedAmount}
+                  </span>
+                )}
               </div>
             ) : (
-              <Link href="/pricing" className="hidden sm:block">
-                <div className="px-3 py-1 bg-[#FFFBEB] border border-[#FDE68A] rounded-full text-xs font-semibold text-[#92400E] hover:bg-[#FEF3C7] transition-colors">
-                  Upgrade to Generate
+              <Link href="/pricing">
+                <div className="px-2.5 sm:px-3 py-1 bg-[#FFFBEB] border border-[#FDE68A] rounded-full text-xs font-semibold text-[#92400E] hover:bg-[#FEF3C7] transition-colors">
+                  Upgrade
                 </div>
               </Link>
             )}

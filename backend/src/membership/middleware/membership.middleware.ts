@@ -167,81 +167,84 @@ export async function requireActiveMembership(
   }
 }
 
-export async function requireGenerationCredit(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
-  try {
-    if (!req.user || !req.membership) {
-      throw new AppError("MEMBERSHIP_REQUIRED", "Active membership check required.", 403);
-    }
+export function requireCredits(creditsNeeded: number = 1) {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user || !req.membership) {
+        throw new AppError("MEMBERSHIP_REQUIRED", "Active membership check required.", 403);
+      }
 
-    if (req.user.role === "ADMIN") {
-      return next();
-    }
+      if (req.user.role === "ADMIN") {
+        return next();
+      }
 
-    if (!process.env.DATABASE_URL) {
-      const mockUser = mockStore.users.find(
-        (u) => u.id === req.user!.id || u.email === req.user!.email
-      );
-      const limit = req.membership.generationLimit;
-      const used = mockUser?.totalGenerations ?? req.membership.usedCredits ?? 0;
-      const remaining = Math.max(0, limit - used);
+      if (!process.env.DATABASE_URL) {
+        const mockUser = mockStore.users.find(
+          (u) => u.id === req.user!.id || u.email === req.user!.email
+        );
+        const limit = req.membership.generationLimit;
+        const used = mockUser?.totalGenerations ?? req.membership.usedCredits ?? 0;
+        const remaining = Math.max(0, limit - used);
+
+        req.membership.usedCredits = used;
+        req.membership.remainingCredits = remaining;
+
+        if (remaining < creditsNeeded) {
+          throw new AppError(
+            "LIMIT_EXCEEDED",
+            `You need ${creditsNeeded} credit${creditsNeeded > 1 ? "s" : ""} for this generation, but you have ${remaining} credit${remaining === 1 ? "" : "s"} remaining. Please upgrade your plan for additional credits.`,
+            403,
+            {
+              limit,
+              used,
+              remaining,
+              needed: creditsNeeded,
+              upgradeUrl: "/pricing",
+            }
+          );
+        }
+
+        return next();
+      }
+
+      const { periodStart, generationLimit } = req.membership;
+
+      const countResult = await prisma.generationUsage.aggregate({
+        where: {
+          userId: req.user.id,
+          status: "success",
+          createdAt: { gte: periodStart },
+        },
+        _sum: { creditsUsed: true },
+      });
+
+      const used = countResult._sum.creditsUsed || 0;
+      const remaining = Math.max(0, generationLimit - used);
 
       req.membership.usedCredits = used;
       req.membership.remainingCredits = remaining;
 
-      if (remaining <= 0) {
+      if (remaining < creditsNeeded) {
         throw new AppError(
           "LIMIT_EXCEEDED",
-          `You have reached your monthly generation limit of ${limit} try-ons. Please upgrade your plan for additional credits.`,
+          `You need ${creditsNeeded} credit${creditsNeeded > 1 ? "s" : ""} for this generation, but you have ${remaining} credit${remaining === 1 ? "" : "s"} remaining. Please upgrade your plan for additional credits.`,
           403,
           {
-            limit,
+            limit: generationLimit,
             used,
-            remaining: 0,
+            remaining,
+            needed: creditsNeeded,
             upgradeUrl: "/pricing",
           }
         );
       }
 
-      return next();
+      next();
+    } catch (error) {
+      next(error);
     }
-
-    const { periodStart, generationLimit } = req.membership;
-
-    const countResult = await prisma.generationUsage.aggregate({
-      where: {
-        userId: req.user.id,
-        status: "success",
-        createdAt: { gte: periodStart },
-      },
-      _sum: { creditsUsed: true },
-    });
-
-    const used = countResult._sum.creditsUsed || 0;
-    const remaining = Math.max(0, generationLimit - used);
-
-    req.membership.usedCredits = used;
-    req.membership.remainingCredits = remaining;
-
-    if (remaining <= 0) {
-      throw new AppError(
-        "LIMIT_EXCEEDED",
-        `You have reached your monthly generation limit of ${generationLimit} try-ons. Please upgrade your plan for additional credits.`,
-        403,
-        {
-          limit: generationLimit,
-          used,
-          remaining: 0,
-          upgradeUrl: "/pricing",
-        }
-      );
-    }
-
-    next();
-  } catch (error) {
-    next(error);
-  }
+  };
 }
+
+export const requireGenerationCredit = requireCredits(1);
+
