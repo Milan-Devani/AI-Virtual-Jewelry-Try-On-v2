@@ -9,6 +9,7 @@ import { GenerationSettings } from "../components/ai-tryon/GenerationSettings";
 import { AiModelCustomizer } from "../components/ai-tryon/AiModelCustomizer";
 import { LiveProgress } from "../components/ai-tryon/LiveProgress";
 import { ResultSection } from "../components/result/ResultSection";
+import { DirectVideoCreator } from "../components/ai-tryon/DirectVideoCreator";
 import { HistoryModal } from "../components/result/HistoryModal";
 import { SettingsModal } from "../components/layout/SettingsModal";
 import { MembershipUpgradeModal } from "../components/ai-tryon/MembershipUpgradeModal";
@@ -26,7 +27,7 @@ import {
 } from "../types";
 import { generateTryOnApi, ApiErrorWithDetails } from "../services/api";
 import { JEWELRY_CATEGORIES } from "../constants/categories";
-import { Sparkles, AlertTriangle, ArrowRight, Camera, Wand2, Film } from "lucide-react";
+import { Sparkles, AlertTriangle, ArrowRight, Camera, Wand2, Film, Video } from "lucide-react";
 import { toast } from "sonner";
 import { showSweetTryOnReady, showSweetToast } from "../lib/sweetalert";
 import { cn } from "../lib/utils";
@@ -287,10 +288,14 @@ export default function TryOnWorkspacePage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#F0EBE3]">
               <div>
                 <h2 className="text-lg sm:text-xl font-serif font-bold text-[#1A1715]">
-                  AI Try-On Studio Workspace
+                  {tryOnMode === "image-to-video"
+                    ? "AI Video Runway Studio"
+                    : "AI Try-On Studio Workspace"}
                 </h2>
                 <p className="text-xs text-[#7A736B] mt-0.5">
-                  {isAiModelMode
+                  {tryOnMode === "image-to-video"
+                    ? "Upload any jewelry image to render 1080p 60fps Reels & Shorts with Wan 2.1"
+                    : isAiModelMode
                     ? "Upload jewelry product & customize the AI model persona"
                     : "Upload model & jewelry references • Choose category & render"}
                 </p>
@@ -308,14 +313,14 @@ export default function TryOnWorkspacePage() {
               )}
 
               {/* Mode Switcher Tabs */}
-              <div className="flex items-center p-1 rounded-2xl bg-[#F0EBE3] border border-[#E4DCD0] shrink-0">
+              <div className="flex flex-wrap items-center p-1 rounded-2xl bg-[#F0EBE3] border border-[#E4DCD0] shrink-0 gap-0.5">
                 <button
                   type="button"
                   disabled={isGenerating}
                   onClick={() => setTryOnMode("custom-model")}
                   className={cn(
                     "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 flex items-center gap-1.5",
-                    !isAiModelMode
+                    tryOnMode === "custom-model"
                       ? "bg-white text-[#1A1715] shadow-sm font-bold"
                       : "text-[#7A736B] hover:text-[#1A1715]"
                   )}
@@ -330,7 +335,7 @@ export default function TryOnWorkspacePage() {
                   onClick={() => setTryOnMode("ai-model")}
                   className={cn(
                     "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 flex items-center gap-1.5",
-                    isAiModelMode
+                    tryOnMode === "ai-model"
                       ? "bg-white text-[#1A1715] shadow-sm font-bold"
                       : "text-[#7A736B] hover:text-[#1A1715]"
                   )}
@@ -338,8 +343,34 @@ export default function TryOnWorkspacePage() {
                   <Wand2 className="w-3.5 h-3.5 text-[#B38541]" />
                   <span>Generate AI Model (Product Only)</span>
                 </button>
+
+                <button
+                  type="button"
+                  disabled={isGenerating}
+                  onClick={() => setTryOnMode("image-to-video")}
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 flex items-center gap-1.5",
+                    tryOnMode === "image-to-video"
+                      ? "bg-[#1A1715] text-[#D8B77E] shadow-sm font-bold"
+                      : "text-[#7A736B] hover:text-[#1A1715]"
+                  )}
+                >
+                  <Video className="w-3.5 h-3.5 text-[#D8B77E]" />
+                  <span>Image to Video (AI Runway)</span>
+                  <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]">
+                    Wan 2.1
+                  </span>
+                </button>
               </div>
             </div>
+
+            {tryOnMode === "image-to-video" ? (
+              <DirectVideoCreator
+                onOpenHistory={() => setIsHistoryOpen(true)}
+                initialImageUrl={result?.imageUrl || null}
+              />
+            ) : (
+              <>
 
             {/* Studio Workspace Layout */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -503,8 +534,10 @@ export default function TryOnWorkspacePage() {
                 </span>
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </>
+        )}
+      </CardContent>
+    </Card>
 
         {/* Results Section */}
         <div ref={resultRef}>

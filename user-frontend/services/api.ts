@@ -492,7 +492,8 @@ export async function deleteHistoryApi(id: string): Promise<void> {
 }
 
 export interface GenerateVideoParams {
-  imageUrl: string;
+  imageUrl?: string;
+  imageFile?: File | null;
   category?: string;
   aspectRatio?: "9:16" | "4:5" | "16:9" | "1:1";
   motionStyle?: "head-turn" | "editorial-smile" | "subtle-sparkle" | "runway-pose";
@@ -512,15 +513,27 @@ export interface GeneratedVideoResult {
 
 export async function generateVideoApi(params: GenerateVideoParams): Promise<GeneratedVideoResult> {
   const token = getAuthToken();
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
+  const headers: Record<string, string> = {};
   if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  let body: BodyInit;
+  if (params.imageFile) {
+    const formData = new FormData();
+    formData.append("image", params.imageFile);
+    if (params.category) formData.append("category", params.category);
+    if (params.aspectRatio) formData.append("aspectRatio", params.aspectRatio);
+    if (params.motionStyle) formData.append("motionStyle", params.motionStyle);
+    if (params.durationSeconds) formData.append("durationSeconds", String(params.durationSeconds));
+    body = formData;
+  } else {
+    headers["Content-Type"] = "application/json";
+    body = JSON.stringify(params);
+  }
 
   const res = await fetch(`${API_BASE_URL}/video/generate`, {
     method: "POST",
     headers,
-    body: JSON.stringify(params),
+    body,
   });
 
   const data = await res.json();

@@ -2,7 +2,7 @@ export type AspectRatio = "1:1" | "3:4" | "4:5" | "16:9";
 export type ImageSizeQuality = "1K" | "2K" | "4K";
 export type BackgroundType = "studio" | "luxury" | "minimal" | "outdoor";
 export type GenerationStatus = "idle" | "uploading" | "processing" | "completed" | "failed";
-export type TryOnMode = "custom-model" | "ai-model";
+export type TryOnMode = "custom-model" | "ai-model" | "image-to-video";
 
 export interface AiModelConfig {
   gender: "female" | "male";
