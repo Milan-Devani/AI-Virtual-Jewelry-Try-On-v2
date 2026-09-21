@@ -287,52 +287,58 @@ export default function TryOnWorkspacePage() {
         <Card className="w-full bg-white border border-[#E8E1D6] rounded-3xl shadow-card overflow-visible">
           <CardContent className="p-6 sm:p-8 space-y-6 overflow-visible">
             {/* Section Header & Mode Switcher */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#F0EBE3]">
-              <div>
-                <h2 className="text-lg sm:text-xl font-serif font-bold text-[#1A1715]">
-                  {tryOnMode === "multi-img"
-                    ? "AI Jewelry Product Photoshoot Generator"
-                    : tryOnMode === "image-to-video"
-                    ? "AI Video Runway Studio"
-                    : "AI Try-On Studio Workspace"}
-                </h2>
-                <p className="text-xs text-[#7A736B] mt-0.5">
-                  {tryOnMode === "multi-img"
-                    ? "Upload 1 single jewelry product image to synthesize a 5-image commercial campaign set"
-                    : tryOnMode === "image-to-video"
-                    ? "Upload any jewelry image to render 1080p 60fps Reels & Shorts with Wan 2.1"
-                    : isAiModelMode
-                    ? "Upload jewelry product & customize the AI model persona"
-                    : "Upload model & jewelry references • Choose category & render"}
-                </p>
+            {/* Section Header & Mode Switcher */}
+            <div className="space-y-4 pb-4 border-b border-[#F0EBE3]">
+              {/* Row 1: Workspace Title & Contextual View Result Button */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#1A1715]">
+                    {tryOnMode === "multi-img"
+                      ? "AI Jewelry Product Photoshoot Generator"
+                      : tryOnMode === "image-to-video"
+                      ? "AI Video Runway Studio"
+                      : isAiModelMode
+                      ? "AI Virtual Model Persona Studio"
+                      : "AI Try-On Studio Workspace"}
+                  </h2>
+                  <p className="text-xs sm:text-sm text-[#7A736B] mt-1">
+                    {tryOnMode === "multi-img"
+                      ? "Upload 1 single jewelry product image to synthesize a 5-image commercial campaign set"
+                      : tryOnMode === "image-to-video"
+                      ? "Upload any jewelry image to render 1080p 60fps Reels & Shorts with Wan 2.1"
+                      : isAiModelMode
+                      ? "Upload jewelry product & customize the AI model persona"
+                      : "Upload model & jewelry references • Choose category & render"}
+                  </p>
+                </div>
+
+                {result && tryOnMode !== "multi-img" && (
+                  <button
+                    type="button"
+                    onClick={() => resultRef.current?.scrollIntoView({ behavior: "smooth" })}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#FBF3E4] to-[#F5E6CC] border border-[#D9C4A2] text-xs font-bold text-[#8C6428] hover:shadow-sm transition-all active:scale-95 shrink-0 self-start sm:self-auto"
+                  >
+                    <Film className="w-3.5 h-3.5 text-[#B38541]" />
+                    <span>View Result &amp; AI Video ↓</span>
+                  </button>
+                )}
               </div>
 
-              {result && tryOnMode !== "multi-img" && (
-                <button
-                  type="button"
-                  onClick={() => resultRef.current?.scrollIntoView({ behavior: "smooth" })}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#FBF3E4] to-[#F5E6CC] border border-[#D9C4A2] text-xs font-bold text-[#8C6428] hover:shadow-sm transition-all active:scale-95"
-                >
-                  <Film className="w-3.5 h-3.5 text-[#B38541]" />
-                  <span>View Result &amp; AI Video ↓</span>
-                </button>
-              )}
-
-              {/* Mode Switcher Tabs */}
-              <div className="flex flex-wrap items-center p-1 rounded-2xl bg-[#F0EBE3] border border-[#E4DCD0] shrink-0 gap-0.5">
+              {/* Row 2: Mode Switcher Tabs (Balanced 4-Column Responsive Grid) */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 p-1.5 rounded-2xl bg-[#F0EBE3] border border-[#E4DCD0] w-full">
                 <button
                   type="button"
                   disabled={isGenerating}
                   onClick={() => setTryOnMode("custom-model")}
                   className={cn(
-                    "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 flex items-center gap-1.5",
+                    "w-full py-2.5 px-3 rounded-xl text-xs font-semibold transition-all duration-150 flex items-center justify-center gap-1.5 text-center",
                     tryOnMode === "custom-model"
-                      ? "bg-white text-[#1A1715] shadow-sm font-bold"
-                      : "text-[#7A736B] hover:text-[#1A1715]"
+                      ? "bg-white text-[#1A1715] shadow-sm font-bold border border-[#E0D5C3]"
+                      : "text-[#7A736B] hover:text-[#1A1715] hover:bg-white/50"
                   )}
                 >
-                  <Camera className="w-3.5 h-3.5 text-[#B38541]" />
-                  <span>Upload Model (2 Images)</span>
+                  <Camera className="w-3.5 h-3.5 text-[#B38541] shrink-0" />
+                  <span className="truncate">Upload Model (2 Imgs)</span>
                 </button>
 
                 <button
@@ -340,14 +346,14 @@ export default function TryOnWorkspacePage() {
                   disabled={isGenerating}
                   onClick={() => setTryOnMode("ai-model")}
                   className={cn(
-                    "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 flex items-center gap-1.5",
+                    "w-full py-2.5 px-3 rounded-xl text-xs font-semibold transition-all duration-150 flex items-center justify-center gap-1.5 text-center",
                     tryOnMode === "ai-model"
-                      ? "bg-white text-[#1A1715] shadow-sm font-bold"
-                      : "text-[#7A736B] hover:text-[#1A1715]"
+                      ? "bg-white text-[#1A1715] shadow-sm font-bold border border-[#E0D5C3]"
+                      : "text-[#7A736B] hover:text-[#1A1715] hover:bg-white/50"
                   )}
                 >
-                  <Wand2 className="w-3.5 h-3.5 text-[#B38541]" />
-                  <span>Generate AI Model (Product Only)</span>
+                  <Wand2 className="w-3.5 h-3.5 text-[#B38541] shrink-0" />
+                  <span className="truncate">AI Model (Product Only)</span>
                 </button>
 
                 <button
@@ -355,15 +361,15 @@ export default function TryOnWorkspacePage() {
                   disabled={isGenerating}
                   onClick={() => setTryOnMode("image-to-video")}
                   className={cn(
-                    "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 flex items-center gap-1.5",
+                    "w-full py-2.5 px-3 rounded-xl text-xs font-semibold transition-all duration-150 flex items-center justify-center gap-1.5 text-center",
                     tryOnMode === "image-to-video"
                       ? "bg-[#1A1715] text-[#D8B77E] shadow-sm font-bold"
-                      : "text-[#7A736B] hover:text-[#1A1715]"
+                      : "text-[#7A736B] hover:text-[#1A1715] hover:bg-white/50"
                   )}
                 >
-                  <Video className="w-3.5 h-3.5 text-[#D8B77E]" />
-                  <span>Image to Video (AI Runway)</span>
-                  <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]">
+                  <Video className="w-3.5 h-3.5 text-[#D8B77E] shrink-0" />
+                  <span className="truncate">Image to Video</span>
+                  <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0] shrink-0">
                     Wan 2.1
                   </span>
                 </button>
@@ -373,15 +379,15 @@ export default function TryOnWorkspacePage() {
                   disabled={isGenerating}
                   onClick={() => setTryOnMode("multi-img")}
                   className={cn(
-                    "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 flex items-center gap-1.5",
+                    "w-full py-2.5 px-3 rounded-xl text-xs font-semibold transition-all duration-150 flex items-center justify-center gap-1.5 text-center",
                     tryOnMode === "multi-img"
                       ? "bg-[#1A1715] text-[#D8B77E] shadow-sm font-bold"
-                      : "text-[#7A736B] hover:text-[#1A1715]"
+                      : "text-[#7A736B] hover:text-[#1A1715] hover:bg-white/50"
                   )}
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-[#D8B77E]" />
-                  <span>Multi Img</span>
-                  <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]">
+                  <Sparkles className="w-3.5 h-3.5 text-[#D8B77E] shrink-0" />
+                  <span className="truncate">Multi Img</span>
+                  <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A] shrink-0">
                     5 Shots
                   </span>
                 </button>
