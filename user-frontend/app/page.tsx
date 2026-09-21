@@ -10,6 +10,7 @@ import { AiModelCustomizer } from "../components/ai-tryon/AiModelCustomizer";
 import { LiveProgress } from "../components/ai-tryon/LiveProgress";
 import { ResultSection } from "../components/result/ResultSection";
 import { DirectVideoCreator } from "../components/ai-tryon/DirectVideoCreator";
+import { MultiImagePhotoshoot } from "../components/ai-tryon/MultiImagePhotoshoot";
 import { HistoryModal } from "../components/result/HistoryModal";
 import { SettingsModal } from "../components/layout/SettingsModal";
 import { MembershipUpgradeModal } from "../components/ai-tryon/MembershipUpgradeModal";
@@ -66,6 +67,7 @@ export default function TryOnWorkspacePage() {
 
   // Workflow Mode State: Upload Human Model vs Generate AI Virtual Model
   const [tryOnMode, setTryOnMode] = React.useState<TryOnMode>("custom-model");
+  const [videoInitialImageUrl, setVideoInitialImageUrl] = React.useState<string | null>(null);
 
   // AI Virtual Model Persona Config
   const [aiModelConfig, setAiModelConfig] = React.useState<AiModelConfig>({
@@ -288,12 +290,16 @@ export default function TryOnWorkspacePage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#F0EBE3]">
               <div>
                 <h2 className="text-lg sm:text-xl font-serif font-bold text-[#1A1715]">
-                  {tryOnMode === "image-to-video"
+                  {tryOnMode === "multi-img"
+                    ? "AI Jewelry Product Photoshoot Generator"
+                    : tryOnMode === "image-to-video"
                     ? "AI Video Runway Studio"
                     : "AI Try-On Studio Workspace"}
                 </h2>
                 <p className="text-xs text-[#7A736B] mt-0.5">
-                  {tryOnMode === "image-to-video"
+                  {tryOnMode === "multi-img"
+                    ? "Upload 1 single jewelry product image to synthesize a 5-image commercial campaign set"
+                    : tryOnMode === "image-to-video"
                     ? "Upload any jewelry image to render 1080p 60fps Reels & Shorts with Wan 2.1"
                     : isAiModelMode
                     ? "Upload jewelry product & customize the AI model persona"
@@ -301,7 +307,7 @@ export default function TryOnWorkspacePage() {
                 </p>
               </div>
 
-              {result && (
+              {result && tryOnMode !== "multi-img" && (
                 <button
                   type="button"
                   onClick={() => resultRef.current?.scrollIntoView({ behavior: "smooth" })}
@@ -361,13 +367,39 @@ export default function TryOnWorkspacePage() {
                     Wan 2.1
                   </span>
                 </button>
+
+                <button
+                  type="button"
+                  disabled={isGenerating}
+                  onClick={() => setTryOnMode("multi-img")}
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 flex items-center gap-1.5",
+                    tryOnMode === "multi-img"
+                      ? "bg-[#1A1715] text-[#D8B77E] shadow-sm font-bold"
+                      : "text-[#7A736B] hover:text-[#1A1715]"
+                  )}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#D8B77E]" />
+                  <span>Multi Img</span>
+                  <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]">
+                    5 Shots
+                  </span>
+                </button>
               </div>
             </div>
 
-            {tryOnMode === "image-to-video" ? (
+            {tryOnMode === "multi-img" ? (
+              <MultiImagePhotoshoot
+                onOpenHistory={() => setIsHistoryOpen(true)}
+                onNavigateToVideo={(imgUrl) => {
+                  setVideoInitialImageUrl(imgUrl);
+                  setTryOnMode("image-to-video");
+                }}
+              />
+            ) : tryOnMode === "image-to-video" ? (
               <DirectVideoCreator
                 onOpenHistory={() => setIsHistoryOpen(true)}
-                initialImageUrl={result?.imageUrl || null}
+                initialImageUrl={videoInitialImageUrl || result?.imageUrl || null}
               />
             ) : (
               <>
@@ -589,7 +621,7 @@ export default function TryOnWorkspacePage() {
             </div>
           )}
 
-          {result && (
+          {result && tryOnMode !== "multi-img" && (
             <div ref={resultRef} className="pt-2">
               <ResultSection
                 result={result}

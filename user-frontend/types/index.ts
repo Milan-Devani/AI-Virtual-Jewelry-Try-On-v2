@@ -2,7 +2,33 @@ export type AspectRatio = "1:1" | "3:4" | "4:5" | "16:9";
 export type ImageSizeQuality = "1K" | "2K" | "4K";
 export type BackgroundType = "studio" | "luxury" | "minimal" | "outdoor";
 export type GenerationStatus = "idle" | "uploading" | "processing" | "completed" | "failed";
-export type TryOnMode = "custom-model" | "ai-model" | "image-to-video";
+export type TryOnMode = "custom-model" | "ai-model" | "image-to-video" | "multi-img";
+
+export type PhotoshootShotType =
+  | "hero-model"
+  | "alternate-model"
+  | "product-hero"
+  | "product-angle"
+  | "macro-detail";
+
+export interface PhotoshootShotResult {
+  id: string;
+  type: PhotoshootShotType;
+  title: string;
+  description: string;
+  imageUrl: string;
+  aspectRatio: string;
+}
+
+export interface PhotoshootCampaignResult {
+  id: string;
+  sourceJewelryUrl: string;
+  category: string;
+  theme: string;
+  totalShots: number;
+  shots: PhotoshootShotResult[];
+  createdAt: string;
+}
 
 export interface AiModelConfig {
   gender: "female" | "male";

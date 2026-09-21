@@ -137,6 +137,7 @@ import { paymentRoutes } from "./payments/payment.routes.js";
 import { adminRoutes } from "./admin/admin.routes.js";
 import { meRoutes } from "./routes/me.routes.js";
 import { videoRouter } from "./routes/video.routes.js";
+import { photoshootRouter } from "./routes/photoshoot.routes.js";
 
 app.use("/api/auth", authRoutes);
 app.use("/api/membership", membershipRoutes);
@@ -144,6 +145,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/me", meRoutes);
 app.use("/api/video", videoRouter);
+app.use("/api/photoshoot", photoshootRouter);
 app.use("/api/try-on", tryOnRoutes);
 app.use("/api", healthRoutes);
 app.use("/api", tryOnRoutes);

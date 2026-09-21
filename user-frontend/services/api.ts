@@ -6,7 +6,11 @@ import {
   ImageSizeQuality,
   AiModelConfig,
   TryOnMode,
+  PhotoshootCampaignResult,
+  PhotoshootShotResult,
 } from "../types";
+
+export type { PhotoshootCampaignResult, PhotoshootShotResult };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 const LOCAL_STORAGE_HISTORY_KEY = "jewelai_history_records";
@@ -544,6 +548,58 @@ export async function generateVideoApi(params: GenerateVideoParams): Promise<Gen
   return {
     ...data.data,
     videoUrl: normalizeMediaUrl(data.data.videoUrl),
+  };
+}
+
+export interface GeneratePhotoshootParams {
+  imageFile?: File | null;
+  imageUrl?: string;
+  category?: string;
+  theme?: "luxury-studio" | "royal-bridal" | "minimal-white" | "dark-editorial";
+  aspectRatio?: "4:5" | "1:1" | "16:9";
+}
+
+export async function generatePhotoshootApi(
+  params: GeneratePhotoshootParams
+): Promise<PhotoshootCampaignResult> {
+  const token = getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  let body: BodyInit;
+  if (params.imageFile) {
+    const formData = new FormData();
+    formData.append("image", params.imageFile);
+    if (params.category) formData.append("category", params.category);
+    if (params.theme) formData.append("theme", params.theme);
+    if (params.aspectRatio) formData.append("aspectRatio", params.aspectRatio);
+    body = formData;
+  } else {
+    headers["Content-Type"] = "application/json";
+    body = JSON.stringify(params);
+  }
+
+  const res = await fetch(`${API_BASE_URL}/photoshoot/generate`, {
+    method: "POST",
+    headers,
+    body,
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(
+      data.message || data.error?.message || "Failed to generate photoshoot campaign"
+    );
+  }
+
+  const campaign: PhotoshootCampaignResult = data.data;
+  return {
+    ...campaign,
+    sourceJewelryUrl: normalizeMediaUrl(campaign.sourceJewelryUrl),
+    shots: campaign.shots.map((shot) => ({
+      ...shot,
+      imageUrl: normalizeMediaUrl(shot.imageUrl),
+    })),
   };
 }
 
