@@ -7,8 +7,24 @@ export type TryOnMode = "custom-model" | "ai-model" | "image-to-video" | "multi-
 export type PhotoshootDisplayStyle = "marble-flatlay" | "linen-bust" | "studio-pedestal";
 
 export type PhotoshootShotType =
+  | "product-showcase"
+  | "model-front"
+  | "pendant-macro"
+  | "earring-side"
+  | "earring-macro"
+  | "lifestyle-ugc"
+  | "product-flatlay"
+  | "final-hero"
+  | "storyboard-reveal"
+  | "storyboard-touch"
+  | "storyboard-macro"
+  | "storyboard-profile"
+  | "storyboard-climax"
   | "hero-model"
   | "alternate-model"
+  | "closeup-model"
+  | "couture-model"
+  | "editorial-model"
   | "product-hero"
   | "product-angle"
   | "macro-detail";

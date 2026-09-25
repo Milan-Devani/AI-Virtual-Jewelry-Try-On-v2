@@ -51,11 +51,14 @@ export interface PhotoshootCampaignResult {
 }
 
 const DEFAULT_SHOT_TYPES: PhotoshootShotType[] = [
-  "hero-model",
-  "alternate-model",
-  "product-hero",
-  "product-angle",
-  "macro-detail",
+  "product-showcase",
+  "model-front",
+  "pendant-macro",
+  "earring-side",
+  "earring-macro",
+  "lifestyle-ugc",
+  "product-flatlay",
+  "final-hero",
 ];
 
 export class PhotoshootService {
@@ -69,7 +72,7 @@ export class PhotoshootService {
 
     logger.info(
       { photoshootId, category, theme, aspectRatio },
-      "Initiating 5-image jewelry photoshoot campaign synthesis"
+      `Initiating ${DEFAULT_SHOT_TYPES.length}-image jewelry photoshoot campaign synthesis`
     );
 
     const outputDir = path.resolve(process.cwd(), "uploads", "photoshoots", photoshootId);
@@ -87,11 +90,12 @@ export class PhotoshootService {
       category,
       theme,
       displayStyle: input.displayStyle || "marble-flatlay",
+      aspectRatio,
     };
 
     const shots: PhotoshootShotResult[] = [];
 
-    // 2. Generate each of the 5 photoshoot shots sequentially to respect rate limits & ensure quality
+    // 2. Generate each of the photoshoot shots sequentially to respect rate limits & ensure quality
     for (let i = 0; i < DEFAULT_SHOT_TYPES.length; i++) {
       const shotType = DEFAULT_SHOT_TYPES[i];
       const shotConfig = buildShotPrompt(shotType, promptOptions);
@@ -99,7 +103,7 @@ export class PhotoshootService {
 
       logger.info(
         { photoshootId, shotIndex: i + 1, shotType },
-        `Generating photoshoot shot ${i + 1}/5: ${shotConfig.title}`
+        `Generating photoshoot shot ${i + 1}/${DEFAULT_SHOT_TYPES.length}: ${shotConfig.title}`
       );
 
       try {
@@ -142,7 +146,7 @@ export class PhotoshootService {
           const retryGen = await geminiImageService.generateTryOn({
             jewelryBuffer: input.jewelryBuffer,
             jewelryMime: input.jewelryMime,
-            prompt: `${MASTER_PROMPT_CORE}\n\n${JEWELRY_PRESERVATION_CORE}\n\nShot: ${shotConfig.title}. High-end professional luxury jewelry photoshoot of the uploaded reference. Exact jewelry preservation, clean luxury composition, razor-sharp focus, commercial quality.`,
+            prompt: `${MASTER_PROMPT_CORE}\n\nScene: ${shotConfig.title}. Luxury commercial jewelry campaign storyboard frame of the uploaded reference for category ${category}. Exact jewelry preservation, natural anatomical placement, razor-sharp focus, single standalone image, zero collage, commercial photography.`,
             aspectRatio,
           });
 

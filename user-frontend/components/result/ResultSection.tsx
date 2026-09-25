@@ -11,6 +11,7 @@ import {
   Film,
   Check,
   Share2,
+  Maximize2,
 } from "lucide-react";
 import { TryOnGenerationResult } from "../../types";
 import { Button } from "../ui/button";
@@ -18,6 +19,8 @@ import { ComparisonSlider } from "./ComparisonSlider";
 import { generateDownloadFilename } from "../../lib/utils";
 import { normalizeMediaUrl, generateVideoApi, GeneratedVideoResult } from "../../services/api";
 import { toast } from "sonner";
+import { VideoModal } from "../video/VideoModal";
+import { VideoProject } from "../../constants/sample-video-projects";
 
 interface ResultSectionProps {
   result: TryOnGenerationResult;
@@ -25,7 +28,7 @@ interface ResultSectionProps {
   isRegenerating?: boolean;
 }
 
-type MotionStyle = "head-turn" | "editorial-smile" | "subtle-sparkle" | "runway-pose";
+type MotionStyle = "head-turn" | "editorial-smile" | "subtle-sparkle" | "runway-pose" | "ugc-cinematic";
 type VideoAspectRatio = "9:16" | "4:5" | "16:9";
 
 export function ResultSection({
@@ -42,6 +45,7 @@ export function ResultSection({
   const [motionStyle, setMotionStyle] = React.useState<MotionStyle>("head-turn");
   const [videoAspectRatio, setVideoAspectRatio] = React.useState<VideoAspectRatio>("9:16");
   const [isVideoPlaying, setIsVideoPlaying] = React.useState(true);
+  const [isVideoModalOpen, setIsVideoModalOpen] = React.useState(false);
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
   const activeImageUrl = normalizeMediaUrl(result.imageUrl);
@@ -88,7 +92,7 @@ export function ResultSection({
         category: result.categoryName || result.category,
         aspectRatio: videoAspectRatio,
         motionStyle,
-        durationSeconds: 3,
+        durationSeconds: 15,
       });
 
       setVideoResult(video);
@@ -286,6 +290,7 @@ export function ResultSection({
               disabled={isGeneratingVideo}
               className="h-9 px-2.5 rounded-xl border border-[#D9CEBF] bg-white text-xs font-semibold text-[#1A1715] focus:outline-none focus:ring-2 focus:ring-[#B38541]"
             >
+              <option value="ugc-cinematic">📱 UGC Cinematic Lifestyle</option>
               <option value="head-turn">✨ Gentle Head Turn &amp; Sparkle</option>
               <option value="editorial-smile">💎 Editorial Smile &amp; Gaze</option>
               <option value="subtle-sparkle">🔍 Micro Caustic Glint</option>
@@ -339,17 +344,28 @@ export function ResultSection({
           </Button>
 
           {viewMode === "video" && videoResult ? (
-            <Button
-              variant="gold"
-              size="md"
-              disabled={isDownloading}
-              isLoading={isDownloading}
-              onClick={() => handleDownload(videoResult.videoUrl, "mp4")}
-              className="flex-1 sm:flex-none flex items-center gap-2 px-6"
-            >
-              <Download className="w-4 h-4" />
-              <span>Download 1080p MP4</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="md"
+                onClick={() => setIsVideoModalOpen(true)}
+                className="flex items-center gap-1.5 border-[#D8C7B0] text-xs font-bold"
+              >
+                <Maximize2 className="w-4 h-4 text-[#B38541]" />
+                <span>Open Video Modal</span>
+              </Button>
+              <Button
+                variant="gold"
+                size="md"
+                disabled={isDownloading}
+                isLoading={isDownloading}
+                onClick={() => handleDownload(videoResult.videoUrl, "mp4")}
+                className="flex items-center gap-2 px-6 text-xs font-bold"
+              >
+                <Download className="w-4 h-4" />
+                <span>Download 1080p MP4</span>
+              </Button>
+            </div>
           ) : (
             <Button
               variant="gold"
@@ -365,6 +381,44 @@ export function ResultSection({
           )}
         </div>
       </div>
+
+      {/* Video Modal Integration */}
+      {videoResult && (
+        <VideoModal
+          isOpen={isVideoModalOpen}
+          onClose={() => setIsVideoModalOpen(false)}
+          project={{
+            id: videoResult.id,
+            title: `${result.categoryName || result.category} Luxury Runway Campaign`,
+            subtitle: `15s Commercial • ${videoResult.aspectRatio} • 60 FPS`,
+            category: result.category,
+            categoryName: result.categoryName || result.category,
+            aspectRatio: (videoResult.aspectRatio as any) || videoAspectRatio,
+            durationSeconds: videoResult.durationSeconds || 15,
+            motionStyle,
+            sourceJewelryUrl: result.jewelryImageUrl || result.imageUrl,
+            videoUrl: videoResult.videoUrl,
+            thumbnailUrl: result.imageUrl,
+            modelPersona: {
+              id: "active-tryon-model",
+              name: "Campaign Fashion Model",
+              attire: "Luxury Haute Couture Campaign Styling",
+              skinTone: "Radiant Studio Lighting",
+              badge: "Studio Model",
+              gender: "female",
+              avatarUrl: result.modelImageUrl || result.imageUrl,
+              description: "High-fashion commercial editorial motion.",
+            },
+            highlights: [
+              `100% exact ${result.categoryName || result.category} preservation`,
+              "5-stage luxury runway progression & hero close-up",
+              "Ray-traced caustics and 35mm shallow focus",
+            ],
+            prompt: videoResult.prompt || "Luxury jewelry commercial photoshoot...",
+            tags: [result.category, videoAspectRatio, "15s", "1080p"],
+          }}
+        />
+      )}
     </section>
   );
 }

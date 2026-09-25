@@ -129,12 +129,15 @@ const SAMPLE_JEWELRY = [
 ];
 
 const GENERATION_STAGES = [
-  { label: "Locking jewelry geometry, stone count & metal reflectance...", progress: 15 },
-  { label: "Synthesizing Shot 1: Hero Model Luxury Campaign Portrait...", progress: 35 },
-  { label: "Synthesizing Shot 2: Editorial Alternate Model Profile...", progress: 55 },
-  { label: "Synthesizing Shot 3: Commercial Product Hero with Grounded Shadows...", progress: 75 },
-  { label: "Synthesizing Shot 4: 45° Three-Quarter View on Solid Foundation...", progress: 88 },
-  { label: "Synthesizing Shot 5: Ultra-Macro Gemstone & Diamond Detail...", progress: 98 },
+  { label: "Locking jewelry geometry, stone count & metal reflectance...", progress: 10 },
+  { label: "Synthesizing Image 1: Product Showcase on Mannequin & Stands...", progress: 22 },
+  { label: "Synthesizing Image 2: Model Front View in Ivory/Gold Saree...", progress: 34 },
+  { label: "Synthesizing Image 3: Pendant & Chain Extreme Macro on Skin...", progress: 48 },
+  { label: "Synthesizing Image 4: Earring Side Portrait (70° Profile)...", progress: 60 },
+  { label: "Synthesizing Image 5: Earring Ultra-Macro Detail...", progress: 72 },
+  { label: "Synthesizing Image 6: Lifestyle UGC Candid Interaction...", progress: 84 },
+  { label: "Synthesizing Image 7: Complete Product Flat Lay on Silk...", progress: 92 },
+  { label: "Synthesizing Image 8: Final Hero Portrait & Lighting Finale...", progress: 98 },
 ];
 
 export function MultiImagePhotoshoot({
@@ -224,8 +227,8 @@ export function MultiImagePhotoshoot({
     }
 
     setIsGenerating(true);
-    toast.info("Synthesizing 5-shot luxury photoshoot set... Please wait.", {
-      icon: "📸",
+    toast.info("Synthesizing 5-scene cinematic storyboard campaign... Please wait.", {
+      icon: "🎬",
       duration: 6000,
     });
 
@@ -243,9 +246,9 @@ export function MultiImagePhotoshoot({
       const remainingMsg = result.credits
         ? ` • ${result.credits.deducted || result.shots.length} credits used (${result.credits.remainingCredits} remaining)`
         : "";
-      toast.success("Photoshoot Campaign Generated!", {
+      toast.success("Storyboard Campaign Generated!", {
         icon: "✨",
-        description: `Synthesized ${result.shots.length} commercial shots${remainingMsg}.`,
+        description: `Synthesized ${result.shots.length} separate cinematic scenes${remainingMsg}.`,
       });
     } catch (err: any) {
       toast.error("Photoshoot Generation Failed", {
@@ -307,19 +310,19 @@ export function MultiImagePhotoshoot({
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#D8B77E]/20 text-[#EBD5B3] border border-[#D8B77E]/30 uppercase tracking-widest">
                 <Sparkles className="w-3 h-3 text-[#D8B77E]" />
-                Commercial Photoshoot Engine
+                8-Shot Campaign Studio
               </span>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#10B981]/20 text-[#6EE7B7] border border-[#10B981]/30 uppercase tracking-wider">
-                1 Upload = 5 Images
+                1 Upload = 8 Separate Images
               </span>
             </div>
 
             <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#F8F5EE] tracking-tight">
-              AI Jewelry Product Photoshoot Generator
+              AI Jewelry 8-Shot Commercial Campaign Generator
             </h2>
 
             <p className="text-sm text-[#C4B7A6] leading-relaxed">
-              Upload <strong>one single jewelry image</strong>. JEWELAI automatically preserves every gemstone, diamond count, and metal detail to generate a complete <strong>4–5 image commercial campaign</strong>: 2–3 luxury model portraits + 2–3 macro product studio angles.
+              Upload <strong>one jewelry product image</strong>. JEWELAI generates a complete <strong>8-image luxury commercial campaign</strong>: Product Showcase, Front Portrait, Pendant Macro, Earring Profile, Earring Macro, Lifestyle UGC, Silk Flat Lay, and Final Hero Portrait. Every image is generated and saved as a <strong>separate, individual full-frame photograph</strong>.
             </p>
           </div>
 
@@ -628,7 +631,7 @@ export function MultiImagePhotoshoot({
                 ) : (
                   <>
                     <Camera className="w-4 h-4 text-[#D8B77E]" />
-                    <span>Generate 5-Image Photoshoot Set</span>
+                    <span>Generate 8-Image Campaign Set</span>
                   </>
                 )}
               </Button>
@@ -638,15 +641,15 @@ export function MultiImagePhotoshoot({
             <div className="pt-1 border-t border-[#F0EBE3] space-y-1.5 text-[11px] text-[#7A6F60]">
               <div className="flex items-center gap-2">
                 <Check className="w-3.5 h-3.5 text-[#10B981] shrink-0" />
-                <span>2 Editorial Human Model Campaign Portraits</span>
+                <span>8 Separate Standalone Campaign Photographs (No Collages / No Grids)</span>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="w-3.5 h-3.5 text-[#10B981] shrink-0" />
-                <span>3 Commercial Product &amp; Ultra-Macro Angles</span>
+                <span>Complete Coverage: Mannequin, Model, Macros, UGC, Flat Lay &amp; Hero</span>
               </div>
               <div className="flex items-center gap-2">
                 <Check className="w-3.5 h-3.5 text-[#10B981] shrink-0" />
-                <span>Zero AI Glitch: Real Skin Pores &amp; Exact Stone Counts</span>
+                <span>100% Product Fidelity: Exact Gemstones, Metalwork &amp; Proportions</span>
               </div>
             </div>
           </div>
@@ -663,7 +666,7 @@ export function MultiImagePhotoshoot({
 
             <div className="space-y-2">
               <h3 className="text-lg font-serif font-bold text-[#1A1715]">
-                Directing Your Luxury Jewelry Campaign...
+                Directing Your 8-Image Luxury Jewelry Campaign...
               </h3>
               <p className="text-xs text-[#7A6F60]">
                 {GENERATION_STAGES[progressStageIndex].label}
@@ -681,13 +684,16 @@ export function MultiImagePhotoshoot({
             </div>
 
             {/* Step badges */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1.5 pt-2">
               {[
-                "Hero Model",
-                "Alternate Model",
-                "Product Hero",
-                "45° Profile",
-                "Macro Detail",
+                "1. Showcase",
+                "2. Front View",
+                "3. Pendant Macro",
+                "4. Side Profile",
+                "5. Earring Macro",
+                "6. Lifestyle UGC",
+                "7. Silk Flatlay",
+                "8. Hero Portrait",
               ].map((name, i) => (
                 <div
                   key={i}
@@ -698,8 +704,8 @@ export function MultiImagePhotoshoot({
                       : "bg-white/60 border-[#E5DCce] text-[#A39889]"
                   )}
                 >
-                  <p className="font-bold">Shot {i + 1}</p>
-                  <p className="truncate">{name}</p>
+                  <p className="font-bold">Image {i + 1}</p>
+                  <p className="truncate">{name.split(". ")[1] || name}</p>
                 </div>
               ))}
             </div>
@@ -715,7 +721,7 @@ export function MultiImagePhotoshoot({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base sm:text-lg font-serif font-bold text-[#1A1715]">
-                  Photoshoot Campaign Set ({campaignResult.shots.length} Photographs)
+                  AI 8-Shot Commercial Campaign ({campaignResult.shots.length} Separate Photographs)
                 </h3>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#10B981]/20 text-[#065F46] border border-[#10B981]/30">
                   Ready
@@ -736,7 +742,7 @@ export function MultiImagePhotoshoot({
                 className="bg-white border-[#D9C4A2] text-xs font-semibold text-[#8C6428] hover:bg-[#FAF5EC]"
               >
                 <Download className="w-3.5 h-3.5 mr-1.5" />
-                Download All Photos
+                Download All 8 Separate Images
               </Button>
             </div>
           </div>
@@ -761,15 +767,8 @@ export function MultiImagePhotoshoot({
 
                     {/* Tag badge */}
                     <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                      <span
-                        className={cn(
-                          "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md shadow-sm",
-                          isModelShot
-                            ? "bg-[#1A1715]/80 text-[#F0E6D2] border border-[#D9C4A2]/40"
-                            : "bg-white/90 text-[#1A1715] border border-white/60"
-                        )}
-                      >
-                        Shot {index + 1}: {isModelShot ? "Model Campaign" : "Product Studio"}
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider backdrop-blur-md shadow-sm bg-[#1A1715]/80 text-[#F0E6D2] border border-[#D9C4A2]/40">
+                        Shot {index + 1}: {shot.title.split("—")[1]?.trim() || shot.title}
                       </span>
                     </div>
 

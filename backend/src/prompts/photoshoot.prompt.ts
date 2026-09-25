@@ -1,13 +1,17 @@
 /**
- * JEWELAI — AI Jewelry Product Photoshoot Generator Prompts
+ * JEWELAI — AI Jewelry 8-Shot Commercial Campaign & Storyboard Prompts
  * 
- * Implements the full master specification for synthesizing a professional 
- * 4–5 image jewelry photoshoot campaign from a single uploaded jewelry product:
- * - 2–3 lifestyle/model images (different realistic human models wearing the uploaded jewelry)
- * - 2–3 product-only images (exact jewelry from different professional photography angles)
- * - 100% strict jewelry product preservation (stone count, geometry, metal tone, no hallucinations)
- * - Anti-AI constraints (natural skin pores, real lighting, no plastic/cgi look)
- * - Physical grounding mandate (NO floating jewelry in empty space; physical display busts and stone flatlays)
+ * Implements the user's master specification for generating an 8-image luxury campaign:
+ * Image 1 — Product Showcase (Mannequin & Stands)
+ * Image 2 — Model Front View (Ivory Saree Portrait)
+ * Image 3 — Pendant Macro (Extreme Close-Up on Skin)
+ * Image 4 — Earring Side Portrait (70° Profile)
+ * Image 5 — Earring Macro (Ultra-Realistic Close-Up)
+ * Image 6 — Lifestyle UGC (Spontaneous Personal Interaction)
+ * Image 7 — Complete Product Flat Lay (Cream Silk Fabric)
+ * Image 8 — Final Hero Portrait (Cinematic Luxury Interior Finale)
+ * 
+ * Every image is generated and saved as a SEPARATE standalone photograph.
  */
 
 export type PhotoshootDisplayStyle = "marble-flatlay" | "linen-bust" | "studio-pedestal";
@@ -16,518 +20,360 @@ export interface PhotoshootPromptOptions {
   category: string;
   theme?: "luxury-studio" | "royal-bridal" | "minimal-white" | "dark-editorial";
   displayStyle?: PhotoshootDisplayStyle;
+  aspectRatio?: "4:5" | "1:1" | "16:9";
   customInstructions?: string;
 }
 
 export type PhotoshootShotType =
+  | "product-showcase"
+  | "model-front"
+  | "pendant-macro"
+  | "earring-side"
+  | "earring-macro"
+  | "lifestyle-ugc"
+  | "product-flatlay"
+  | "final-hero"
+  // Legacy / Storyboard aliases:
+  | "storyboard-reveal"
+  | "storyboard-touch"
+  | "storyboard-macro"
+  | "storyboard-profile"
+  | "storyboard-climax"
   | "hero-model"
   | "alternate-model"
+  | "closeup-model"
+  | "couture-model"
+  | "editorial-model"
   | "product-hero"
   | "product-angle"
   | "macro-detail";
 
 /**
- * 16. FINAL MASTER PROMPT (BASE GENERATION INSTRUCTION)
- * Verbatim master instruction as specified in Section 16.
+ * Master instruction — used with every prompt
  */
-export const MASTER_PROMPT_CORE = `
-Create a professional luxury jewelry photoshoot using the uploaded jewelry product as the absolute visual reference.
+export const MASTER_INSTRUCTION = `Use the uploaded jewelry product image as the exact product reference. Preserve the jewelry design with maximum fidelity. The jewelry chain, pendant, gemstones, hanging elements, earrings/accents, proportions, patterns, and craftsmanship must remain unchanged. Do not redesign or invent any part of the jewelry.
 
-Preserve the uploaded jewelry exactly. Maintain its original design, geometry, proportions, gemstones, stone count, stone placement, metal color, craftsmanship, texture and decorative details. Do not redesign, simplify, replace, add or remove any jewelry elements.
+CRITICAL PRODUCT FIDELITY & ZERO SUBSTITUTION MANDATE:
+The uploaded image is the single source of truth for all jewelry pieces.
+Every piece depicted — whether a necklace, pendant, mangalsutra chain, or matching earrings — must be replicated with 100% accuracy.
+DO NOT substitute, redesign, modernize, or alter any piece.
+SPECIFICALLY FOR EARRINGS: When matching earrings are present in the reference image or set, you MUST copy their exact silhouette, upper stud gemstone, central motif plate, colored stones, and specific hanging drop charms. NEVER replace them with generic dome jhumkas, bell-shaped earrings, or different styles.
 
-Create a realistic commercial photography campaign consisting of 4–5 photographs.
+Photorealistic luxury Indian jewelry photography, realistic human skin and hair, physically accurate gold reflections, natural jewelry physics, warm neutral cinematic lighting, soft depth of field, subtle background bokeh, premium DSLR/cinema-camera photography, realistic textures, natural shadows, elegant Indian aesthetic, high-end jewelry campaign, no CGI appearance, no artificial plastic skin, no text, no logo, no watermark.
 
-Generate 2–3 photographs featuring realistic professional fashion models naturally wearing the exact uploaded jewelry. Use different models, poses, hairstyles, compositions, camera angles and styling while maintaining complete jewelry consistency.
+CRITICAL STANDALONE SEPARATE IMAGE MANDATE:
+Generate THIS INDIVIDUAL PHOTOGRAPH ONLY as ONE single standalone full-frame image.
+DO NOT create a collage, montage, storyboard grid, or multi-panel sheet.
+DO NOT split the screen or show multiple angles in one image.
+The output MUST be a SINGLE, continuous, photorealistic camera capture containing exactly ONE scene.
 
-Generate 2–3 professional product-only photographs showing the exact jewelry from different camera angles, including a hero product photograph, a three-quarter/side angle photograph and a detailed macro photograph.
+NEGATIVE:
+mismatched earrings, wrong earrings, substituted earrings, invented earrings, generic jhumka, bell-shaped jhumka, dome jhumka when not in reference, wrong jewelry on ears, distorted jewelry, redesigned jewelry, altered jewelry, different jewelry, missing jewelry parts, extra jewelry parts, duplicate jewelry, duplicated gemstones, missing gemstones, extra gemstones, changed proportions, changed colors, melted metal, deformed jewelry, floating jewelry, incorrectly attached jewelry, unnatural jewelry placement, jewelry morphing, deformed hands, extra fingers, missing fingers, bad anatomy, distorted face, plastic skin, wax skin, CGI, 3D render, cartoon, artificial-looking person, excessive beauty filter, unrealistic reflections, blurry product, low detail, text, typography, logo, watermark, collage, storyboard, multiple images, multi-panel, split screen, grid.`;
 
-Every photograph must look as if it was captured by a professional photographer using a high-end DSLR or mirrorless camera with professional jewelry and fashion photography lighting.
-
-Use realistic studio lighting, softboxes, natural highlights, controlled reflections, realistic shadows, realistic depth of field, natural lens characteristics and professional color grading.
-
-Human models must have completely realistic anatomy, skin texture, facial details, hair, hands and fingers.
-
-Jewelry must physically interact naturally with the model's body and clothing. Maintain correct perspective, scale, weight, reflections, shadows and contact points.
-
-Gemstones must have realistic sparkle and refraction. Metal must have physically believable reflections and highlights.
-
-The final images must look like authentic professional photographs from a luxury jewelry photoshoot.
-
-Do not create an AI-art appearance.
-
-Avoid plastic skin, wax faces, artificial eyes, deformed hands, extra fingers, floating jewelry, warped jewelry, incorrect gemstones, missing stones, additional stones, distorted chains, unrealistic reflections, excessive glow, excessive sharpening, CGI appearance, cartoon appearance, 3D-render appearance, unrealistic anatomy or impossible lighting.
-
-The final result should be indistinguishable from a professionally photographed luxury jewelry campaign and suitable for premium e-commerce, advertising and social media.
-`;
+// Backward-compatible exports
+export const MULTI_IMG_MASTER_PROMPT = MASTER_INSTRUCTION;
+export const MASTER_PROMPT_CORE = MASTER_INSTRUCTION;
+export const JEWELRY_PRESERVATION_CORE = `Preserve the jewelry design with maximum fidelity. The jewelry structure, gemstones, hanging elements, proportions, patterns, and craftsmanship must remain unchanged. Do not redesign or invent any part of the jewelry.`;
+export const PHOTOGRAPHIC_REALISM_CORE = `Photorealistic luxury Indian jewelry photography, realistic human skin and hair, physically accurate gold reflections, natural jewelry physics, warm neutral cinematic lighting, soft depth of field.`;
+export const PHYSICAL_GROUNDING_MANDATE = `Place the jewelry naturally with true gravitational drape and realistic contact shadows. It MUST NEVER hover or float in mid-air.`;
 
 /**
- * 1. JEWELRY PRODUCT PRESERVATION — CRITICAL RULES
+ * Category adaptation helper to ensure the 8 prompts seamlessly adapt across any category
  */
-export const JEWELRY_PRESERVATION_CORE = `
-1. JEWELRY PRODUCT PRESERVATION — CRITICAL:
-The uploaded jewelry is the absolute source of truth.
-The AI MUST preserve:
-* Exact jewelry design
-* Shape & Structure
-* Dimensions / proportions
-* Exact number of stones
-* Stone placement
-* Gemstone colors
-* Diamond arrangement
-* Metal type appearance (yellow gold, silver, rose-gold, platinum, antique finish)
-* Gold/silver/rose-gold color accuracy
-* Engraving and filigree details
-* Chain structure, links and drops
-* Pendant structure
-* Earring structure, hooks and latkans
-* Clasp and findings when visible
-* Texture and decorative patterns
+function getCategoryTerminology(category: string): {
+  productName: string;
+  elements: string;
+  pendantDesc: string;
+  earringDesc: string;
+  mannequinDesc: string;
+} {
+  const cat = (category || "").toLowerCase();
 
-DO NOT redesign the jewelry.
-DO NOT invent additional stones.
-DO NOT remove stones.
-DO NOT change the number of stones.
-DO NOT change the jewelry pattern.
-DO NOT create a similar-looking replacement.
-The generated jewelry must visually match the uploaded reference product as closely as possible.
-If the uploaded image contains a complex jewelry design, prioritize product fidelity over creative styling.
-`;
-
-/**
- * PHYSICAL GROUNDING MANDATE — PREVENTS "FLOATING IN AIR" AI ARTIFACT
- */
-export const PHYSICAL_GROUNDING_MANDATE = `
-CRITICAL PHYSICAL GROUNDING MANDATE — NO FLOATING OR LEVITATING JEWELRY:
-ABSOLUTELY NO FLOATING JEWELRY IN ZERO-GRAVITY EMPTY AIR.
-In real commercial photography, jewelry is NEVER suspended in mid-air without physical support.
-Every product photograph MUST depict the jewelry with physical gravity resting on a real, tangible foundation:
-1. For Necklaces, Mangalsutras & Pendants:
-   * EITHER draped with realistic gravitational weight around a luxury matte linen, ivory velvet, or beige suede jewelry display neck bust / mannequin stand resting solidly on a studio table.
-   * OR arranged flat (commercial flatlay) resting directly with natural contact weight upon a solid physical surface: textured beige travertine stone slab, honed Italian Carrara marble, or fine raw silk cloth.
-   * FOR 45-DEGREE ANGLE SHOTS: The CAMERA is positioned at an elevated 45-degree angle looking down onto the jewelry that is resting firmly on the surface or display bust. The jewelry ITSELF is physically supported and grounded with gravity. It MUST NOT float, tilt in empty air, or fly like a 3D video game object.
-2. For Earrings:
-   * Displayed hanging from a minimalist brass or matte black studio jewelry T-stand, or arranged flat on a ceramic jewelry dish / marble block.
-3. For Rings:
-   * Slotted securely in an ivory velvet ring box / cushion, or resting balanced in a natural stone groove.
-4. For Bracelets & Bangles:
-   * Resting around a cylindrical linen jewelry bar or arranged flat on a polished stone slab.
-5. AMBIENT OCCLUSION & CONTACT SHADOWS:
-   * There MUST be crisp, dark contact ambient occlusion shadows directly underneath every bead, chain link, and metal contour where it touches the surface or bust.
-`;
-
-/**
- * 8. REALISM REQUIREMENTS & 9. ANTI-AI VISUAL REQUIREMENTS
- */
-export const PHOTOGRAPHIC_REALISM_CORE = `
-8. REALISM REQUIREMENTS:
-Human realism:
-* Authentic skin pores, fine facial details, natural skin variation, realistic micro-wrinkles, natural skin sheen
-* Natural individual hair strands, realistic eyelashes, realistic eyes with softbox catchlights, natural lips
-* Natural hands, correct anatomy, correct fingers (exact count of 5 fingers per hand), realistic nails
-* Natural body proportions and posture
-
-Jewelry realism:
-* Accurate metal reflections and controlled specular highlights
-* Real gravitational contact points: chain pressing subtly into skin and fabric with physical drape
-* Correct perspective and natural contact shadows against skin and surfaces
-* Realistic gemstone refraction, dispersion, and realistic sparkle (no fake cartoon glow)
-
-Camera realism:
-* Shot on high-end medium format Hasselblad or Sony A7R V with prime macro/portrait lenses
-* Real optical depth of field with authentic bokeh (not digital post-blur)
-* Realistic exposure with natural highlights and controlled softbox shadows
-* Professional commercial color grading
-
-9. ANTI-AI VISUAL REQUIREMENTS:
-Avoid all common AI-generation artifacts.
-DO NOT generate:
-* Floating jewelry in mid-air with no support
-* Plastic skin or wax-like faces
-* Perfectly symmetrical faces or glass eyes
-* Extra fingers, missing fingers, deformed hands
-* Jewelry fused with skin or floating above chest
-* Broken chains, distorted clasps, or warped loops
-* Incorrect earrings, extra gemstones, missing gemstones
-* Warped jewelry, melting metal, impossible shadows
-* Artificial-looking backgrounds or oversaturated colors
-* Excessive sharpening, excessive glow, CGI appearance, cartoon appearance, or 3D-render appearance
-`;
-
-/**
- * 11. JEWELRY CATEGORY ADAPTATION RULES
- */
-function getCategoryGuidance(
-  category: string,
-  shotType: PhotoshootShotType,
-  displayStyle: PhotoshootDisplayStyle = "marble-flatlay"
-): string {
-  const cat = category.toLowerCase();
-
-  const isBustPreferred = displayStyle === "linen-bust";
-
-  if (cat.includes("earring") || cat.includes("jhumka")) {
-    if (shotType === "hero-model") {
-      return "Category Focus (Earrings): 3/4 front-side model portrait with head slightly turned, hair elegantly styled behind ear to showcase the earring prominently dangling from the earlobe with natural gravitational hang.";
-    }
-    if (shotType === "alternate-model") {
-      return "Category Focus (Earrings): Side-profile portrait of a different model, neck and jawline visible, ear and earring prominently visible with natural earlobe contact.";
-    }
-    if (shotType === "product-hero") {
-      return "Category Focus (Earrings): Pair of earrings displayed hanging from a minimalist studio brass T-stand on a marble base, OR neatly laid flat on a smooth travertine surface with realistic contact drop shadows.";
-    }
-    if (shotType === "product-angle") {
-      return "Category Focus (Earrings): Camera positioned at a 45-degree angle looking down at the earrings resting on a luxury marble jewelry tray, showing the profile thickness, back gallery, stone settings, and drop depth.";
-    }
-    return "Category Focus (Earrings): Macro detail shot focused directly on the main gemstone cluster, prong setting, and hanging drops resting on the surface.";
+  if (cat.includes("mangalsutra")) {
+    return {
+      productName: "mangalsutra necklace and matching earrings",
+      elements: "black-bead mangalsutra chain, gold pendant, gemstones, hanging elements, and matching reference earrings",
+      pendantDesc: "pendant and the surrounding black-and-gold bead chains",
+      earringDesc: "exact matching gold earring from the reference image, preserving its specific upper colored gemstone stud, ornate center gold plate with colored stone, and delicate hanging gold drop charms (strictly NOT a generic jhumka)",
+      mannequinDesc: "elegant dark charcoal jewelry mannequin and matching earring stands",
+    };
   }
 
-  if (cat.includes("necklace") || cat.includes("pendant") || cat.includes("haar") || cat.includes("choker") || cat.includes("mangalsutra")) {
-    if (shotType === "hero-model") {
-      return "Category Focus (Necklace): 3/4 luxury campaign portrait from chest/collarbone level, necklace resting naturally along the collarbones pressing subtly with physical gravity against skin.";
-    }
-    if (shotType === "alternate-model") {
-      return "Category Focus (Necklace): Different model looking slightly sideways, close-up framing from shoulder/chest level, necklace clearly visible, clothing neckline perfectly complementary, chain resting with true weight.";
-    }
-    if (shotType === "product-hero") {
-      if (isBustPreferred) {
-        return "Category Focus (Necklace): Displayed with physical gravity around a professional luxury matte beige linen jewelry display neck bust / stand resting on a studio wooden table. Symmetrical drape with center pendant highlighted.";
-      }
-      return "Category Focus (Necklace): Overhead commercial flat-lay photograph arranged symmetrically resting flat upon a honed luxury travertine stone slab with soft contact shadows underneath every bead and pendant.";
-    }
-    if (shotType === "product-angle") {
-      if (isBustPreferred) {
-        return "Category Focus (Necklace): Camera angled at 45 degrees three-quarter perspective looking at the necklace draped over the luxury linen neck bust, capturing the dimensional pendant profile, layered gold beads, and back gallery.";
-      }
-      return "Category Focus (Necklace): Camera angled at an elevated 45-degree three-quarter perspective looking down at the necklace resting flat on a natural Carrara marble slab. The necklace is firmly grounded on the stone surface with dark contact shadows; it does NOT float.";
-    }
-    return "Category Focus (Necklace): Ultra-macro photograph centered on the main pendant centerpiece, stone cuts, and metal filigree resting on the textured surface.";
+  if (cat.includes("necklace") || cat.includes("pendant") || cat.includes("haar") || cat.includes("choker")) {
+    return {
+      productName: "necklace and matching earrings",
+      elements: "necklace chain, central pendant, gemstones, filigree drops, and matching reference earrings",
+      pendantDesc: "pendant and the surrounding necklace chain / choker structure",
+      earringDesc: "exact matching earring shown in the uploaded reference, preserving its identical silhouette, gemstones, and hanging elements (strictly NOT a generic jhumka)",
+      mannequinDesc: "elegant dark charcoal jewelry neck mannequin and matching display stands",
+    };
   }
 
-  if (cat.includes("bracelet") || cat.includes("bangle") || cat.includes("wristwear") || cat.includes("kada")) {
-    if (shotType === "hero-model") {
-      return "Category Focus (Bracelet/Bangle): Elegant wrist/hand pose, model wearing the piece with natural wrist posture resting gently against neutral clothing.";
-    }
-    if (shotType === "alternate-model") {
-      return "Category Focus (Bracelet/Bangle): Different model with lifestyle hand gesture, close-up of wrist, graceful fingers with natural nails.";
-    }
-    if (shotType === "product-hero") {
-      return "Category Focus (Bracelet/Bangle): Displayed around a cylindrical beige linen jewelry bar, or lying flat on an ivory travertine display block with natural contact shadows.";
-    }
-    if (shotType === "product-angle") {
-      return "Category Focus (Bracelet/Bangle): Camera angled at 45 degrees showing clasp mechanism, hinge, link joints, and lateral stone settings resting on the surface.";
-    }
-    return "Category Focus (Bracelet/Bangle): Macro close-up on the individual links, clasp lock, or stone channel setting.";
+  if (cat.includes("earring") || cat.includes("jhumka") || cat.includes("bali") || cat.includes("stud")) {
+    return {
+      productName: "pair of earrings",
+      elements: "earring structure, gemstone clusters, hanging latkans/drops, and ear findings",
+      pendantDesc: "main earring gemstone cluster, dome, and hanging pearl/gold drops",
+      earringDesc: "matching earring",
+      mannequinDesc: "minimalist dark charcoal studio earring display stands",
+    };
+  }
+
+  if (cat.includes("bangle") || cat.includes("bracelet") || cat.includes("kada") || cat.includes("wristwear")) {
+    return {
+      productName: "bangle / bracelet",
+      elements: "bangle circular structure, gemstones, clasp, hinges, and carved gold patterns",
+      pendantDesc: "centerpiece motif, stone setting, and engraved gold links",
+      earringDesc: "matching wristwear accent",
+      mannequinDesc: "cylindrical dark charcoal luxury velvet jewelry display bar",
+    };
   }
 
   if (cat.includes("ring")) {
-    if (shotType === "hero-model") {
-      return "Category Focus (Ring): Elegant hand pose near collarbone or cheek, ring worn on finger with natural skin crease and correct proportion.";
-    }
-    if (shotType === "alternate-model") {
-      return "Category Focus (Ring): Different model's hand resting gracefully on a textured luxury surface, detailed finger composition.";
-    }
-    if (shotType === "product-hero") {
-      return "Category Focus (Ring): Ring seated upright in a luxury ivory velvet slot cushion or balanced in a natural stone groove with soft drop shadow.";
-    }
-    if (shotType === "product-angle") {
-      return "Category Focus (Ring): 45-degree camera angle showing shank profile, crown height, prong basket, and side stone details while seated in its display slot.";
-    }
-    return "Category Focus (Ring): Macro photograph of the main gemstone table, facet symmetry, and prong craftsmanship.";
+    return {
+      productName: "luxury ring",
+      elements: "ring band shank, crown, center gemstone, prongs, and pave side stones",
+      pendantDesc: "ring crown, gemstone facets, and prong craftsmanship",
+      earringDesc: "matching ring accent",
+      mannequinDesc: "dark charcoal luxury velvet slotted ring display stand",
+    };
   }
 
   if (cat.includes("maang tikka") || cat.includes("matha patti")) {
-    if (shotType === "hero-model") {
-      return "Category Focus (Maang Tikka): Front/3-quarter bridal portrait, forehead and hair parting clearly visible with tikka resting flat on center forehead.";
-    }
-    if (shotType === "alternate-model") {
-      return "Category Focus (Maang Tikka): Different model, slight head tilt, regal bridal expression, chain pinned into hair parted naturally.";
-    }
-    if (shotType === "product-hero") {
-      return "Category Focus (Maang Tikka): Flatlay product hero shot resting on ivory silk fabric with chain extended straight above the pendant medallion.";
-    }
-    if (shotType === "product-angle") {
-      return "Category Focus (Maang Tikka): 45-degree camera angle looking down at the medallion resting on the fabric showing thickness and hook details.";
-    }
-    return "Category Focus (Maang Tikka): Macro shot on center pendant kundan/polki/gemstone setting and pearl drops.";
+    return {
+      productName: "maang tikka / matha patti",
+      elements: "central forehead pendant, pearl drops, kundan/polki setting, and connecting chain",
+      pendantDesc: "central forehead medallion and hanging pearl drops",
+      earringDesc: "matching hair ornament / earring",
+      mannequinDesc: "dark charcoal bridal jewelry display stand",
+    };
   }
 
   if (cat.includes("payal") || cat.includes("anklet")) {
-    if (shotType === "hero-model") {
-      return "Category Focus (Payal/Anklet): Elegant lower-leg and ankle composition, anklet resting gracefully above the ankle bone.";
-    }
-    if (shotType === "alternate-model") {
-      return "Category Focus (Payal/Anklet): Different model pose showing foot and ankle, gentle fabric hemline in background.";
-    }
-    if (shotType === "product-hero") {
-      return "Category Focus (Payal/Anklet): Curled or linear flat presentation on a luxury velvet or travertine stone display.";
-    }
-    if (shotType === "product-angle") {
-      return "Category Focus (Payal/Anklet): 45-degree camera angle showing bells/ghungroos, clasps, and chain links resting on the stone surface.";
-    }
-    return "Category Focus (Payal/Anklet): Macro detail of the clasp, chain links, and decorative ghungroo bells.";
-  }
-
-  if (cat.includes("haath phool")) {
-    if (shotType === "hero-model") {
-      return "Category Focus (Haath Phool): Bridal hand pose, wrist bracelet connecting to ring via delicate chains across the back of the hand.";
-    }
-    if (shotType === "alternate-model") {
-      return "Category Focus (Haath Phool): Different model's hand, side angle showcasing the full chain network and hand center motif.";
-    }
-    if (shotType === "product-hero") {
-      return "Category Focus (Haath Phool): Fully displayed flatlay on luxury silk cloth showing the wrist band, connecting chains, and rings.";
-    }
-    if (shotType === "product-angle") {
-      return "Category Focus (Haath Phool): 45-degree camera angle highlighting the central medallion and connecting links resting on the fabric.";
-    }
-    return "Category Focus (Haath Phool): Macro close-up on the central hand medallion and connecting filigree.";
-  }
-
-  // Default general jewelry
-  return `Category Focus (${category}): Appropriate commercial framing ensuring the ${category} is the primary visual centerpiece resting with natural physical stability on the display surface.`;
-}
-
-/**
- * 10. BACKGROUND DIRECTION & 13. CLOTHING DIRECTION
- */
-function getEnvironmentAndClothing(
-  shotType: PhotoshootShotType,
-  theme: "luxury-studio" | "royal-bridal" | "minimal-white" | "dark-editorial" = "luxury-studio",
-  displayStyle: PhotoshootDisplayStyle = "marble-flatlay"
-): { background: string; clothing: string; physicalSupport: string } {
-  const isModelShot = shotType === "hero-model" || shotType === "alternate-model";
-
-  let physicalSupport = "solid honed travertine stone slab with soft contact shadows";
-  if (displayStyle === "linen-bust") {
-    physicalSupport = "professional luxury matte beige linen jewelry display neck bust standing on a studio wooden table";
-  } else if (displayStyle === "studio-pedestal") {
-    physicalSupport = "minimal ivory ceramic pedestal and textured linen tray";
-  }
-
-  if (theme === "royal-bridal") {
     return {
-      physicalSupport,
-      background: isModelShot
-        ? "Minimal Indian luxury environment, subtle warm amber palatial interior, soft bokeh"
-        : `Rich raw silk and polished amber marble surface (${physicalSupport}) with soft directional studio light`,
-      clothing: isModelShot
-        ? "Traditional Indian bridal styling, elegant saree or lehenga blouse with deep neckline that never overlaps or covers the jewelry"
-        : "N/A",
+      productName: "payal / anklet",
+      elements: "anklet chain, ghungroo bells, clasp, and decorative accents",
+      pendantDesc: "decorative chain links, bells, and centerpiece",
+      earringDesc: "matching anklet charm",
+      mannequinDesc: "dark charcoal luxury velvet jewelry display riser",
     };
   }
 
-  if (theme === "minimal-white") {
-    return {
-      physicalSupport,
-      background: isModelShot
-        ? "Soft high-key ivory studio, minimal clean environment"
-        : `Clean pure white studio surface (${physicalSupport}) with soft natural contact drop shadow underneath every element`,
-      clothing: isModelShot
-        ? "Minimal premium modern fashion styling, solid neutral tone that does not distract from the jewelry"
-        : "N/A",
-    };
-  }
-
-  if (theme === "dark-editorial") {
-    return {
-      physicalSupport: "dark slate or obsidian stone slab with subtle reflections",
-      background: isModelShot
-        ? "Dark luxury studio, moody noir background with controlled rim lighting"
-        : "Dark luxury studio, matte black obsidian or dark slate surface with specular rim light and dark contact shadows",
-      clothing: isModelShot
-        ? "Sophisticated dark evening dress, minimal haute couture neckline allowing the jewelry to shine"
-        : "N/A",
-    };
-  }
-
-  // default: luxury-studio
+  // Default / Coordinated sets
   return {
-    physicalSupport,
-    background: isModelShot
-      ? "Luxury fashion studio, soft beige and warm neutral interior, softboxes, elegant depth of field"
-      : `Warm ivory, soft beige, or matte neutral luxury studio surface (${physicalSupport}) with authentic contact shadows`,
-    clothing: isModelShot
-      ? "Elegant luxury styling, minimal high-fashion clothing that complements without covering or hiding the jewelry"
-      : "N/A",
+    productName: `${category} set`,
+    elements: `${category} structure, gemstones, hanging elements, metal luster, and craftsmanship`,
+    pendantDesc: `main centerpiece of the ${category}`,
+    earringDesc: `matching piece of the ${category}`,
+    mannequinDesc: "elegant dark charcoal luxury jewelry display stand",
   };
 }
 
 /**
- * Builds the comprehensive prompt for each of the 5 photoshoot shots
+ * Builds the comprehensive prompt for each shot of the 8-shot campaign
  */
 export function buildShotPrompt(
   shotType: PhotoshootShotType,
   options: PhotoshootPromptOptions
 ): { prompt: string; title: string; description: string } {
-  const { category, theme = "luxury-studio", displayStyle = "marble-flatlay" } = options;
-  const env = getEnvironmentAndClothing(shotType, theme, displayStyle);
-  const catGuidance = getCategoryGuidance(category, shotType, displayStyle);
+  const { category = "Mangalsutra", theme = "luxury-studio", aspectRatio = "4:5" } = options;
+  const terms = getCategoryTerminology(category);
+  const aspectText = `Aspect: ${aspectRatio} vertical`;
+
+  let shotTitle = "";
+  let shotDescription = "";
+  let promptBody = "";
 
   switch (shotType) {
-    case "hero-model":
-      return {
-        title: "Shot 1 — Hero Model Shot",
-        description: "Professional luxury campaign image featuring a realistic human model wearing the uploaded jewelry naturally.",
-        prompt: `${MASTER_PROMPT_CORE}
-
-${JEWELRY_PRESERVATION_CORE}
-
-==============================
-SPECIFIC INSTRUCTION: IMAGE 1 — HERO MODEL SHOT
-==============================
-Create a professional luxury jewelry campaign image.
-A realistic human model wears the uploaded jewelry naturally.
-
-Requirements:
-* Photorealistic human with natural skin texture, authentic micro-pores, subtle skin warmth, fine facial details, realistic hair strands, and natural body proportions.
-* Realistic hands/fingers when visible with correct anatomy.
-* PHYSICAL GRAVITY & CONTACT: The uploaded ${category} must physically interact with the model's anatomy with true gravitational weight. Chains and beads must press gently against the skin and collarbones, casting authentic subtle contact shadows and indentations. The jewelry MUST NEVER hover or float above the skin.
-* Natural reflections on metal surfaces and realistic gemstone sparkle without artificial glow.
-* Professional studio lighting (large softbox key light, gentle hair rim light, soft reflector fill).
-* Premium luxury fashion photography with shallow depth of field and high-end DSLR/mirrorless camera look (Hasselblad H6D or Sony A7R V with 85mm f/1.4 lens).
-* Composition: 3/4 portrait or close-up framing. Jewelry must be the primary visual focus. Face may be partially visible.
-* Background: ${env.background}.
-* Clothing: ${env.clothing}. Clothing must NOT overlap or hide the jewelry.
-* ${catGuidance}
-
-${PHOTOGRAPHIC_REALISM_CORE}
-
-Output MUST be an authentic, photorealistic commercial luxury campaign photograph. Zero AI plastic look.`,
-      };
-
-    case "alternate-model":
-      return {
-        title: "Shot 2 — Different Model / Alternate Angle",
-        description: "Different realistic model with distinct pose, hairstyle, and camera angle wearing the exact same jewelry.",
-        prompt: `${MASTER_PROMPT_CORE}
-
-${JEWELRY_PRESERVATION_CORE}
-
-==============================
-SPECIFIC INSTRUCTION: IMAGE 2 — DIFFERENT MODEL / DIFFERENT COMPOSITION
-==============================
-Create another realistic model wearing the EXACT SAME uploaded jewelry.
-
-Use:
-* DIFFERENT model appearance (different facial features, skin tone, and distinct ethnic beauty).
-* DIFFERENT hairstyle.
-* DIFFERENT pose and body posture.
-* DIFFERENT camera angle and framing.
-* DIFFERENT clothing/styling.
-* DIFFERENT background treatment (${env.background}).
-
-Consistency & Realism Requirements:
-* The jewelry must remain EXACTLY the same as the uploaded reference product: exact same stone count, stone shapes, metal color, and proportions.
-* PHYSICAL DRAPE: The ${category} rests naturally against the new model's body with true physical gravity and natural skin contact shadows.
-* The image should feel like it belongs to the same professional campaign but was photographed during a different studio setup.
-* ${catGuidance}
-* Clothing: ${env.clothing}. Clothing must NOT overlap or hide the jewelry.
-
-${PHOTOGRAPHIC_REALISM_CORE}
-
-Output MUST be an authentic, distinct commercial campaign photograph featuring the same piece.`,
-      };
-
+    // IMAGE 1 — Product Showcase
+    case "product-showcase":
     case "product-hero":
-      return {
-        title: "Shot 3 — Product Hero Photography",
-        description: "Professional product-only jewelry photograph resting on a real physical luxury foundation with macro sharpness.",
-        prompt: `${MASTER_PROMPT_CORE}
+      shotTitle = "Image 1 — Product Showcase";
+      shotDescription = "Complete jewelry displayed on an elegant dark charcoal mannequin and stands in a luxury Indian studio.";
+      promptBody = `Create a premium jewelry product photograph using the uploaded jewelry image as the exact reference.
 
-${JEWELRY_PRESERVATION_CORE}
+Display the complete ${terms.productName} on an ${terms.mannequinDesc}. If the reference image includes matching earrings alongside the necklace, display the matching earrings on small stands directly beside the mannequin, preserving their exact design, gemstones, and hanging charms. The entire jewelry set must be clearly visible from the front.
 
-${PHYSICAL_GROUNDING_MANDATE}
+Place the display in a luxurious Indian jewelry studio with a warm cream and gold background, subtle flowers and softly blurred decorative elements in the background.
 
-==============================
-SPECIFIC INSTRUCTION: IMAGE 3 — COMMERCIAL PRODUCT HERO PHOTOGRAPHY
-==============================
-Generate a professional product-only jewelry photograph.
-NO human model.
-The jewelry should be photographed as a luxury e-commerce product.
+Camera positioned straight in front of the product, slightly above the center of the piece. Full product visible from top to bottom.
 
-Requirements:
-* Exact uploaded ${category}.
-* PHYSICAL FOUNDATION: The jewelry is physically placed upon: ${env.physicalSupport}.
-* Under NO circumstances should the jewelry float or hover in empty space.
-* Realistic contact ambient occlusion shadows directly underneath every bead, chain link, and metal contour where it touches the surface/bust.
-* Professional studio lighting (Profoto softbox) with soft contact shadow underneath.
-* Accurate reflections and realistic metal highlights.
-* Realistic gemstone reflections, facets, and refraction.
-* Extremely sharp product details across the entire piece (100mm f/8 macro studio lens look).
-* DO NOT redesign the jewelry. Maintain 100% fidelity.
-* ${catGuidance}
+Soft warm studio lighting, realistic gold reflections, detailed gemstones, crisp jewelry edges, natural shadows, premium jewelry catalog photography.
 
-${PHOTOGRAPHIC_REALISM_CORE}
+Product fidelity is the highest priority. Do not alter the jewelry design.
 
-Output MUST be a pristine, commercial-grade product hero photograph with authentic physical contact and grounding.`,
-      };
+${aspectText}`;
+      break;
 
-    case "product-angle":
-      return {
-        title: "Shot 4 — Product 45° Dimensional Angle Photography",
-        description: "Three-quarter 45° camera perspective showing depth, metal profile, and stone settings resting on physical support.",
-        prompt: `${MASTER_PROMPT_CORE}
+    // IMAGE 2 — Model Front View
+    case "model-front":
+    case "hero-model":
+    case "storyboard-reveal":
+      shotTitle = "Image 2 — Model Front View";
+      shotDescription = "Photorealistic luxury Indian jewelry portrait. Elegant Indian woman in an ivory/cream saree with subtle gold embroidery.";
+      promptBody = `Create a photorealistic luxury Indian jewelry portrait using the uploaded jewelry image as the exact product reference.
 
-${JEWELRY_PRESERVATION_CORE}
+Show an elegant Indian woman wearing the complete set: the exact same ${terms.productName} on her neckline, and the EXACT ${terms.earringDesc} from the reference on her ears. DO NOT generate generic jhumkas or different earrings on her ears; replicate the exact earrings from the reference with identical motifs, colored stones, and hanging elements.
 
-${PHYSICAL_GROUNDING_MANDATE}
+She is dressed in a sophisticated ivory/cream saree with subtle gold embroidery. Natural makeup, subtle bindi, realistic skin texture, naturally styled dark hair in an elegant low bun.
 
-==============================
-SPECIFIC INSTRUCTION: IMAGE 4 — THREE-QUARTER 45-DEGREE ANGLE SURFACE PHOTOGRAPHY
-==============================
-Capture a commercial three-quarter perspective photograph where the CAMERA is tilted at an elevated 45-degree angle looking down at the jewelry.
-NO human model.
+Front-facing medium portrait from approximately waist/chest upward. The complete ${terms.productName} should be clearly visible.
 
-CRITICAL ANTI-LEVITATION & SUPPORT MANDATE:
-* The jewelry MUST NOT float, hover, or levitate in mid-air.
-* The jewelry MUST physically rest with natural gravity on: ${env.physicalSupport}.
-* THE CAMERA IS AT 45 DEGREES, NOT THE JEWELRY FLOATING AT 45 DEGREES. The jewelry remains securely seated on the stone surface or draped over the display bust.
-* Real contact shadows: Every bead, chain link, and the main pendant must cast natural contact ambient occlusion shadows on the surface/bust beneath it.
-* Show 3D depth, thickness, prong baskets, and metal filigree naturally from this elevated three-quarter viewpoint.
-* The jewelry must remain physically accurate and identical to the uploaded reference.
-* Background: ${env.background}.
-* Controlled studio directional lighting catching dimensional facets and back gallery.
-* ${catGuidance}
+She looks slightly toward the camera with a subtle natural smile. Authentic human expression, natural posture, realistic breathing and body presence.
 
-${PHOTOGRAPHIC_REALISM_CORE}
+Warm indoor lighting, soft golden practical lights in the background, shallow depth of field, realistic skin tones, premium Indian jewelry campaign photography.
 
-Output MUST be a grounded, authentic commercial studio photograph showing dimensional profile with ZERO floating objects.`,
-      };
+Keep every piece of jewelry 100% identical to the reference image.
 
+${aspectText}`;
+      break;
+
+    // IMAGE 3 — Pendant Macro
+    case "pendant-macro":
     case "macro-detail":
-      return {
-        title: "Shot 5 — Detail / Macro Photography",
-        description: "Extreme close-up macro photograph focusing on gemstone facets, diamond brilliance, and fine metal craftsmanship.",
-        prompt: `${MASTER_PROMPT_CORE}
+    case "closeup-model":
+    case "storyboard-macro":
+      shotTitle = "Image 3 — Pendant Macro";
+      shotDescription = "Extreme photorealistic macro focusing tightly on the centerpiece and intricate craftsmanship resting on natural skin.";
+      promptBody = `Create an extreme photorealistic macro jewelry photograph of the exact ${terms.productName} shown in the uploaded reference image.
 
-${JEWELRY_PRESERVATION_CORE}
+Focus tightly on the ${terms.pendantDesc} resting naturally against the model's skin. Show the intricate gold craftsmanship, engraved patterns, gemstone details, small hanging elements, and realistic metal texture.
 
-${PHYSICAL_GROUNDING_MANDATE}
+The centerpiece should occupy most of the frame while enough of the surrounding chain / structure remains visible to establish the complete design.
 
-==============================
-SPECIFIC INSTRUCTION: IMAGE 5 — DETAIL / MACRO PHOTOGRAPHY
-==============================
-Create a premium macro detail photograph of the uploaded jewelry.
-NO human model.
+Natural warm skin texture in the background, realistic pores and subtle fabric edge from an ivory saree.
 
-Focus on:
-* Gemstones and diamond facets
-* Stone prong settings and diamond arrangement
-* Metal craftsmanship, texture, and engraving
-* Fine decorative elements, filigree, and clasp when visible
+Premium macro jewelry photography, 85mm/100mm macro lens appearance, extremely sharp jewelry details, realistic reflections, soft cinematic background blur, natural warm lighting.
 
-Requirements:
-* The jewelry is resting securely on: ${env.physicalSupport}.
-* Use realistic macro photography (1:1 macro reproduction on a prime 90mm or 100mm f/2.8 Macro lens).
-* Use authentic optical shallow depth of field (f/2.8 - f/4).
-* The focused jewelry area must be EXTREMELY detailed and razor-sharp, revealing real metal casting grain, prong tightness, and faceted gemstone clarity, while the background naturally falls out of focus into soft, creamy optical bokeh.
-* Prismatic gemstone sparkle, realistic caustics, and authentic metal highlights.
-* Background: ${env.background}.
-* ${catGuidance}
+Do not modify, simplify, add, remove, or redesign any jewelry element.
 
-${PHOTOGRAPHIC_REALISM_CORE}
+${aspectText}`;
+      break;
 
-Output MUST look like an authentic luxury jewelry catalog macro photograph with true optical depth.`,
-      };
+    // IMAGE 4 — Earring Side Portrait
+    case "earring-side":
+    case "alternate-model":
+    case "storyboard-profile":
+    case "product-angle":
+      shotTitle = "Image 4 — Earring Side Portrait";
+      shotDescription = "Side-profile portrait turned 70° to the side, highlighting the exact reference earring under warm natural window light.";
+      promptBody = `Create a photorealistic side-profile luxury jewelry portrait using the uploaded jewelry image as the exact reference.
+
+HERO FOCUS — EXACT REFERENCE EARRING:
+The model's face is turned approximately 70 degrees to the side, placing the visible ear and the earring as the PRIMARY HERO of this photograph.
+She is wearing the EXACT matching earring from the uploaded product reference image. Look directly at the earrings shown in the uploaded jewelry image: replicate its precise shape, silhouette, upper gemstone stud (with red/colored stone), ornate center gold plate motif (with central colored gemstone), and the exact delicate hanging gold drop charms dangling below.
+ZERO SUBSTITUTION: Under no circumstances should this be a generic jhumka, large umbrella bell earring, or different design. The earring must match the uploaded reference with 100% photographic accuracy, identical in every way to the earring in the product set.
+
+HAIR & STYLING:
+Her dark hair is styled in an elegant, neat low chignon bun, cleanly tucked behind her ear so the entire earring is unobstructed, fully visible, and sharply in focus. Natural skin texture, subtle makeup, and realistic ear anatomy.
+
+NECKLINE & ATTIRE:
+She wears the same sophisticated ivory and gold saree. The delicate chain of the matching ${terms.productName} rests naturally along her neck and collarbone in the background/secondary plane, while the earring remains the crisp, sharp focal point.
+
+LIGHTING & PHOTOGRAPHY:
+Warm natural window light mixed with subtle golden ambient studio lighting. Sharp focus on the earring, crisp gold reflections, authentic gemstone color, and soft cinematic depth of field across the background.
+
+The jewelry must remain 100% identical to the uploaded reference image. Do not invent, alter, or substitute any jewelry piece.
+
+${aspectText}`;
+      break;
+
+    // IMAGE 5 — Earring Macro
+    case "earring-macro":
+      shotTitle = "Image 5 — Earring Macro";
+      shotDescription = "Ultra-realistic macro close-up of the earring worn naturally on the ear, showing gold structure and colored stones.";
+      promptBody = `Create an ultra-realistic macro close-up photograph of the EXACT matching gold ${terms.earringDesc} from the uploaded jewelry reference image.
+
+The piece is worn naturally on an Indian woman's earlobe. Show the entire piece clearly in sharp macro detail, including the upper gemstone stud section, intricate gold structure with center motif plate and colored stone, and delicate hanging gold drop charms.
+
+Capture realistic skin texture, individual hair strands gently framing around the ear, natural shadows, and realistic jewelry attachment.
+
+Extremely detailed macro photography, shallow depth of field, luxury jewelry campaign aesthetic, warm neutral lighting, physically accurate gold reflections, premium DSLR macro lens look.
+
+The jewelry must be identical to the reference product with no invented, missing, or altered elements.
+
+${aspectText}`;
+      break;
+
+    // IMAGE 6 — Lifestyle UGC
+    case "lifestyle-ugc":
+    case "storyboard-touch":
+      shotTitle = "Image 6 — Lifestyle UGC";
+      shotDescription = "Spontaneous, authentic UGC-style luxury photograph of the woman touching and adjusting the jewelry with a natural smile.";
+      promptBody = `Create an authentic photorealistic luxury UGC-style photograph of the same Indian woman wearing the exact ${terms.productName} and the EXACT matching reference earrings from the uploaded reference.
+
+She is wearing an elegant ivory and gold saree in a beautiful warm Indian home or luxury boutique environment. She naturally touches and adjusts the jewelry centerpiece with one hand while looking down at the piece with a subtle genuine smile.
+
+EARRING & PRODUCT FIDELITY:
+On her ears, she wears the EXACT matching earrings from the reference image (preserving the same upper gemstone, center motif plate, and hanging charms as seen in the reference, strictly NOT generic jhumkas). The entire jewelry set must be completely identical to the uploaded reference.
+
+The pose should feel spontaneous and natural, like a real customer/lifestyle jewelry photograph rather than a heavily staged advertisement.
+
+Warm evening ambient light, realistic indoor environment, soft background bokeh, subtle flowers and decorative elements, natural skin texture and realistic hair.
+
+Show the jewelry clearly while maintaining a natural composition.
+
+Premium UGC + cinematic jewelry photography, realistic human proportions, realistic hands and fingers, natural expression.
+
+Exact jewelry preservation across every piece is mandatory.
+
+${aspectText}`;
+      break;
+
+    // IMAGE 7 — Complete Product Flat Lay
+    case "product-flatlay":
+      shotTitle = "Image 7 — Complete Product Flat Lay";
+      shotDescription = "Top-down luxury flat-lay on cream silk fabric with delicate white flowers and minimal gold props.";
+      promptBody = `Create a premium luxury jewelry flat-lay photograph using the uploaded jewelry image as the exact product reference.
+
+Carefully arrange the complete ${terms.productName} on luxurious cream-colored silk fabric. The piece should be positioned naturally with the centerpiece prominently displayed in the center and the accent pieces placed beside it.
+
+Add subtle elegant Indian luxury props such as small white flowers and a minimal gold decorative object, but keep the jewelry as the clear focus.
+
+Top-down camera angle, beautiful composition, soft folds in the silk, realistic fabric texture, warm natural lighting, realistic gold reflections and gemstones.
+
+High-end Indian jewelry catalog photography, premium editorial styling, photorealistic, extremely detailed.
+
+The jewelry must match the original product exactly. Do not invent or change its design.
+
+${aspectText}`;
+      break;
+
+    // IMAGE 8 — Final Hero Portrait
+    case "final-hero":
+    case "couture-model":
+    case "editorial-model":
+    case "storyboard-climax":
+    default:
+      shotTitle = "Image 8 — Final Hero Portrait";
+      shotDescription = "Cinematic campaign hero frame. Standing in an elegant warm luxury interior with confident smile and golden bokeh.";
+      promptBody = `Create a premium cinematic hero photograph using the uploaded jewelry reference.
+
+Show the same elegant Indian woman wearing the complete ${terms.productName} and the EXACT matching reference earrings. She is dressed in an ivory and gold saree and standing in an elegant warm Indian luxury interior.
+
+Medium portrait composition, beautiful natural posture, subtle confident smile, looking toward the camera. The complete jewelry should be clearly visible: the ${terms.pendantDesc} positioned naturally on her neckline, and the matching earrings visible on her ears (strictly matching the reference earring design with identical stones and charms, NOT generic jhumkas).
+
+Warm golden practical lights, soft cream background, subtle floral elements, cinematic bokeh, realistic skin and hair, physically accurate jewelry reflections.
+
+The image should feel like the final hero frame of a premium Indian jewelry campaign while still feeling authentic and realistic.
+
+No text, no typography, no logo, no watermark. Preserve the jewelry exactly as the reference.
+
+${aspectText}`;
+      break;
   }
+
+  const prompt = `${MASTER_INSTRUCTION}
+
+==================================================
+SPECIFIC INSTRUCTION: ${shotTitle.toUpperCase()}
+==================================================
+
+${promptBody}`.trim();
+
+  return {
+    prompt,
+    title: shotTitle,
+    description: shotDescription,
+  };
 }

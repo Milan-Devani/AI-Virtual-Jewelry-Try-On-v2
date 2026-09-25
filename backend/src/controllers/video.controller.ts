@@ -10,8 +10,10 @@ const generateVideoSchema = z.object({
   imageUrl: z.string().min(1, "Image or uploaded file is required"),
   category: z.string().optional().default("jewelry"),
   aspectRatio: z.enum(["9:16", "4:5", "16:9", "1:1"]).optional().default("9:16"),
-  motionStyle: z.enum(["head-turn", "editorial-smile", "subtle-sparkle", "runway-pose"]).optional().default("head-turn"),
-  durationSeconds: z.coerce.number().min(2).max(5).optional().default(3),
+  motionStyle: z.enum(["head-turn", "editorial-smile", "subtle-sparkle", "runway-pose", "ugc-cinematic"]).optional().default("ugc-cinematic"),
+  durationSeconds: z.coerce.number().min(2).max(20).optional().default(15),
+  customPrompt: z.string().optional(),
+  negativePrompt: z.string().optional(),
 });
 
 export class VideoController {

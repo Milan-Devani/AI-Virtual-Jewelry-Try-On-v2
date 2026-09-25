@@ -68,6 +68,7 @@ export default function TryOnWorkspacePage() {
   // Workflow Mode State: Upload Human Model vs Generate AI Virtual Model
   const [tryOnMode, setTryOnMode] = React.useState<TryOnMode>("custom-model");
   const [videoInitialImageUrl, setVideoInitialImageUrl] = React.useState<string | null>(null);
+  const [videoInitialCategory, setVideoInitialCategory] = React.useState<string | null>(null);
 
   // AI Virtual Model Persona Config
   const [aiModelConfig, setAiModelConfig] = React.useState<AiModelConfig>({
@@ -392,9 +393,9 @@ export default function TryOnWorkspacePage() {
                   )}
                 >
                   <Sparkles className="w-3.5 h-3.5 text-[#D8B77E] shrink-0" />
-                  <span className="truncate">Multi Img</span>
+                  <span className="truncate">8-Shot Campaign</span>
                   <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A] shrink-0">
-                    5 Shots
+                    8 Images
                   </span>
                 </button>
               </div>
@@ -403,8 +404,9 @@ export default function TryOnWorkspacePage() {
             {tryOnMode === "multi-img" ? (
               <MultiImagePhotoshoot
                 onOpenHistory={() => setIsHistoryOpen(true)}
-                onNavigateToVideo={(imgUrl) => {
+                onNavigateToVideo={(imgUrl, cat) => {
                   setVideoInitialImageUrl(imgUrl);
+                  if (cat) setVideoInitialCategory(cat);
                   setTryOnMode("image-to-video");
                 }}
               />
@@ -412,6 +414,7 @@ export default function TryOnWorkspacePage() {
               <DirectVideoCreator
                 onOpenHistory={() => setIsHistoryOpen(true)}
                 initialImageUrl={videoInitialImageUrl || result?.imageUrl || null}
+                initialCategory={videoInitialCategory || selectedCategory}
               />
             ) : (
               <>

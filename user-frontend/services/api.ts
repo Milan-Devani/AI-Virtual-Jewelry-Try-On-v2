@@ -540,8 +540,10 @@ export interface GenerateVideoParams {
   imageFile?: File | null;
   category?: string;
   aspectRatio?: "9:16" | "4:5" | "16:9" | "1:1";
-  motionStyle?: "head-turn" | "editorial-smile" | "subtle-sparkle" | "runway-pose";
+  motionStyle?: "head-turn" | "editorial-smile" | "subtle-sparkle" | "runway-pose" | "ugc-cinematic";
   durationSeconds?: number;
+  customPrompt?: string;
+  negativePrompt?: string;
 }
 
 export interface GeneratedVideoResult {
@@ -574,6 +576,8 @@ export async function generateVideoApi(params: GenerateVideoParams): Promise<Gen
     if (params.aspectRatio) formData.append("aspectRatio", params.aspectRatio);
     if (params.motionStyle) formData.append("motionStyle", params.motionStyle);
     if (params.durationSeconds) formData.append("durationSeconds", String(params.durationSeconds));
+    if (params.customPrompt) formData.append("customPrompt", params.customPrompt);
+    if (params.negativePrompt) formData.append("negativePrompt", params.negativePrompt);
     body = formData;
   } else {
     headers["Content-Type"] = "application/json";

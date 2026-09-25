@@ -7,14 +7,22 @@ import { config } from "../config/env.config.js";
 import { logger } from "../utils/logger.js";
 import { AppError } from "../utils/errors.js";
 import { membershipService } from "../membership/membership.service.js";
+import {
+  buildVideoPrompt,
+  VIDEO_NEGATIVE_PROMPT,
+  UGC_CINEMATIC_NEGATIVE_PROMPT,
+  MASTER_VIDEO_PROMPT_CORE,
+} from "../prompts/video.prompt.js";
 
 export interface GenerateVideoInput {
   imageUrl: string;
   category?: string;
   aspectRatio?: "9:16" | "4:5" | "16:9" | "1:1";
-  motionStyle?: "head-turn" | "editorial-smile" | "subtle-sparkle" | "runway-pose";
+  motionStyle?: "head-turn" | "editorial-smile" | "subtle-sparkle" | "runway-pose" | "ugc-cinematic";
   durationSeconds?: number;
   userId?: string;
+  customPrompt?: string;
+  negativePrompt?: string;
 }
 
 export interface GenerateVideoResult {
@@ -53,28 +61,6 @@ function getTargetDimensions(aspectRatio: string): { width: number; height: numb
   }
 }
 
-// Build high-end cinematic prompt focused on jewelry optical reflections & human realism
-function buildVideoPrompt(category = "jewelry", motionStyle = "head-turn"): string {
-  const motionDirectives: Record<string, string> = {
-    "head-turn":
-      "The model slowly and elegantly turns her head toward the soft studio light, softly blinking, revealing a subtle regal smile. Diamond and gold reflections shimmer naturally.",
-    "editorial-smile":
-      "Model gently tilts her chin up, looking into the camera with serene editorial confidence, soft eye contact, gentle breathing, jewelry catching warm studio highlights.",
-    "subtle-sparkle":
-      "Slow micro-pan across the jewelry pieces, prismatic diamond caustics and gleaming gold luster catching softbox lighting, ultra-realistic metal shine.",
-    "runway-pose":
-      "Slow-motion high-fashion commercial runway movement, model shoulders and head gently swaying with natural elegance, hair catching a soft breeze.",
-  };
-
-  const selectedMotion = motionDirectives[motionStyle] || motionDirectives["head-turn"];
-
-  return [
-    `8k cinematic macro video of a luxury ${category} commercial photoshoot.`,
-    selectedMotion,
-    "Real human skin texture with natural pores, subcutaneous warmth, genuine eye reflections, individual fine hair strands.",
-    "Ray-traced physical caustics, soft prismatic sparkles on gemstones and gold, zero warping, zero jewelry deformation, authentic 35mm lens depth of field, photorealistic 60fps luxury editorial master.",
-  ].join(" ");
-}
 
 export class VideoGenerationService {
   /**
@@ -143,14 +129,14 @@ export class VideoGenerationService {
     imagePath: string,
     prompt: string,
     durationSeconds: number,
-    aspectRatio: string
+    aspectRatio: string,
+    customNegativePrompt?: string
   ): Promise<string> {
     logger.info({ spaceName }, "Connecting to Hugging Face Space for video generation...");
     const client = await Client.connect(spaceName, { token: hfToken as any });
     const imageHandle = handle_file(imagePath);
 
-    const negativePrompt =
-      "Bright tones, overexposed, static, blurred details, subtitles, style, works, paintings, images, static, overall gray, worst quality, low quality, JPEG compression residue, ugly, incomplete, extra fingers, poorly drawn hands, deformed, disfigured, misshapen limbs, watermark, text";
+    const negativePrompt = customNegativePrompt || VIDEO_NEGATIVE_PROMPT;
 
     let result: any;
 
@@ -219,12 +205,17 @@ export class VideoGenerationService {
     const videoId = uuidv4();
     const aspectRatio = input.aspectRatio || "9:16";
     const motionStyle = input.motionStyle || "head-turn";
-    const duration = Math.min(Math.max(input.durationSeconds || 3, 2), 5);
-    const prompt = buildVideoPrompt(input.category, motionStyle);
+    const duration = Math.min(Math.max(input.durationSeconds || 15, 2), 20);
+    const prompt = buildVideoPrompt({
+      category: input.category,
+      motionStyle,
+      customPrompt: input.customPrompt,
+      durationSeconds: duration,
+    });
 
     logger.info(
-      { videoId, aspectRatio, motionStyle, duration },
-      "Starting AI video try-on generation"
+      { videoId, aspectRatio, motionStyle, duration, promptPreview: prompt.slice(0, 100) },
+      "Starting photorealistic luxury jewelry video campaign generation"
     );
 
     const hfToken = config.video.hfToken || process.env.HF_TOKEN;
@@ -256,14 +247,20 @@ export class VideoGenerationService {
 
       for (const space of candidateSpaces) {
         try {
-          logger.info({ space, videoId }, "Attempting video generation on candidate Space");
+          const activeNegative =
+            input.negativePrompt ||
+            (motionStyle === "ugc-cinematic"
+              ? UGC_CINEMATIC_NEGATIVE_PROMPT
+              : VIDEO_NEGATIVE_PROMPT);
+
           remoteVideoUrl = await this.executeGradioPrediction(
             space,
             hfToken,
             preparedJpgPath,
             prompt,
             duration,
-            aspectRatio
+            aspectRatio,
+            activeNegative
           );
           if (remoteVideoUrl) {
             logger.info({ space, videoId }, "Candidate Space successfully generated video!");
