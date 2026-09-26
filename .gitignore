@@ -3,8 +3,6 @@ node_modules/
 .pnp
 .pnp.js
 
-# Environment Variables & Secrets (CRITICAL: Never commit API keys or secrets)
-
 # Build outputs
 dist/
 build/
