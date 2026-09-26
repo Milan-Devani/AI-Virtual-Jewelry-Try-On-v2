@@ -37,6 +37,12 @@ import { cn } from "../../lib/utils";
 interface MultiImagePhotoshootProps {
   onOpenHistory?: () => void;
   onNavigateToVideo?: (imageUrl: string, category?: string, allShots?: string[]) => void;
+  initialImageUrl?: string | null;
+  initialFile?: File | null;
+  initialCategory?: string | null;
+  campaignResult?: PhotoshootCampaignResult | null;
+  onUpdateCampaignResult?: (result: PhotoshootCampaignResult | null) => void;
+  onSyncJewelry?: (file: File | null, previewUrl: string | null, category?: string) => void;
 }
 
 type PhotoshootTheme = "luxury-studio" | "royal-bridal" | "minimal-white" | "dark-editorial";
@@ -143,21 +149,50 @@ const GENERATION_STAGES = [
 export function MultiImagePhotoshoot({
   onOpenHistory,
   onNavigateToVideo,
+  initialImageUrl,
+  initialFile,
+  initialCategory,
+  campaignResult: externalCampaignResult,
+  onUpdateCampaignResult,
+  onSyncJewelry,
 }: MultiImagePhotoshootProps) {
-  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
-  const [category, setCategory] = React.useState<string>("Necklaces & Pendants");
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(initialFile || null);
+  const [previewUrl, setPreviewUrl] = React.useState<string | null>(initialImageUrl || null);
+  const [category, setCategory] = React.useState<string>(initialCategory || "Necklaces & Pendants");
   const [theme, setTheme] = React.useState<PhotoshootTheme>("luxury-studio");
   const [displayStyle, setDisplayStyle] = React.useState<PhotoshootDisplayStyle>("marble-flatlay");
   const [aspectRatio, setAspectRatio] = React.useState<PhotoshootAspectRatio>("4:5");
 
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [progressStageIndex, setProgressStageIndex] = React.useState(0);
-  const [campaignResult, setCampaignResult] = React.useState<PhotoshootCampaignResult | null>(null);
+  const [campaignResult, setCampaignResult] = React.useState<PhotoshootCampaignResult | null>(
+    externalCampaignResult || null
+  );
   const [selectedShotForModal, setSelectedShotForModal] = React.useState<PhotoshootShotResult | null>(null);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const progressTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const updateCampaignResult = (res: PhotoshootCampaignResult | null) => {
+    setCampaignResult(res);
+    onUpdateCampaignResult?.(res);
+  };
+
+  // Synchronize state when parent props change
+  React.useEffect(() => {
+    if (initialImageUrl && !selectedFile && previewUrl !== initialImageUrl) {
+      setPreviewUrl(initialImageUrl);
+    }
+    if (initialFile && selectedFile !== initialFile) {
+      setSelectedFile(initialFile);
+    }
+    if (initialCategory && category !== initialCategory) {
+      setCategory(initialCategory);
+    }
+    if (externalCampaignResult !== undefined && externalCampaignResult !== campaignResult) {
+      setCampaignResult(externalCampaignResult);
+    }
+  }, [initialImageUrl, initialFile, initialCategory, externalCampaignResult]);
 
   // Advance simulated progress indicator during generation
   React.useEffect(() => {
@@ -176,6 +211,17 @@ export function MultiImagePhotoshoot({
     };
   }, [isGenerating]);
 
+  const setFileAndPreview = (file: File) => {
+    if (previewUrl && previewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setSelectedFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+    updateCampaignResult(null);
+    onSyncJewelry?.(file, objectUrl, category);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -190,10 +236,7 @@ export function MultiImagePhotoshoot({
       return;
     }
 
-    setSelectedFile(file);
-    const objectUrl = URL.createObjectURL(file);
-    setPreviewUrl(objectUrl);
-    setCampaignResult(null);
+    setFileAndPreview(file);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -206,17 +249,18 @@ export function MultiImagePhotoshoot({
       return;
     }
 
-    setSelectedFile(file);
-    const objectUrl = URL.createObjectURL(file);
-    setPreviewUrl(objectUrl);
-    setCampaignResult(null);
+    setFileAndPreview(file);
   };
 
   const handleSelectSample = (sample: (typeof SAMPLE_JEWELRY)[0]) => {
+    if (previewUrl && previewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(previewUrl);
+    }
     setSelectedFile(null);
     setPreviewUrl(sample.url);
     setCategory(sample.category);
-    setCampaignResult(null);
+    updateCampaignResult(null);
+    onSyncJewelry?.(null, sample.url, sample.category);
     toast.info(`Loaded sample jewelry: ${sample.name}`);
   };
 
@@ -227,8 +271,8 @@ export function MultiImagePhotoshoot({
     }
 
     setIsGenerating(true);
-    toast.info("Synthesizing 5-scene cinematic storyboard campaign... Please wait.", {
-      icon: "🎬",
+    toast.info("Synthesizing 8-shot commercial campaign with Gemini 3 Pro Image...", {
+      icon: "💎",
       duration: 6000,
     });
 
@@ -242,7 +286,7 @@ export function MultiImagePhotoshoot({
         aspectRatio,
       });
 
-      setCampaignResult(result);
+      updateCampaignResult(result);
       const remainingMsg = result.credits
         ? ` • ${result.credits.deducted || result.shots.length} credits used (${result.credits.remainingCredits} remaining)`
         : "";

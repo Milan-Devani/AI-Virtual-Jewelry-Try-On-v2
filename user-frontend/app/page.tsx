@@ -25,8 +25,9 @@ import {
   TryOnGenerationResult,
   TryOnMode,
   AiModelConfig,
+  PhotoshootCampaignResult,
 } from "../types";
-import { generateTryOnApi, ApiErrorWithDetails } from "../services/api";
+import { generateTryOnApi, ApiErrorWithDetails, GeneratedVideoResult } from "../services/api";
 import { JEWELRY_CATEGORIES } from "../constants/categories";
 import { Sparkles, AlertTriangle, ArrowRight, Camera, Wand2, Film, Video } from "lucide-react";
 import { toast } from "sonner";
@@ -129,13 +130,24 @@ export default function TryOnWorkspacePage() {
   const [generationError, setGenerationError] = React.useState<string | null>(null);
   const [result, setResult] = React.useState<TryOnGenerationResult | null>(null);
 
-  // Restore latest try-on result from session so browser refreshes don't lose the workspace result
+  // Lifted state for Photoshoot Campaign & Video Results
+  const [campaignResult, setCampaignResult] = React.useState<PhotoshootCampaignResult | null>(null);
+  const [videoResult, setVideoResult] = React.useState<GeneratedVideoResult | null>(null);
+
+  // Restore latest results from sessionStorage on mount
   React.useEffect(() => {
     try {
-      const saved = sessionStorage.getItem("jewelai_active_tryon_result");
-      if (saved) {
-        setResult(JSON.parse(saved));
-      }
+      const savedTryOn = sessionStorage.getItem("jewelai_active_tryon_result");
+      if (savedTryOn) setResult(JSON.parse(savedTryOn));
+
+      const savedCampaign = sessionStorage.getItem("jewelai_active_campaign_result");
+      if (savedCampaign) setCampaignResult(JSON.parse(savedCampaign));
+
+      const savedVideo = sessionStorage.getItem("jewelai_active_video_result");
+      if (savedVideo) setVideoResult(JSON.parse(savedVideo));
+
+      const savedStoryboard = sessionStorage.getItem("jewelai_active_storyboard_images");
+      if (savedStoryboard) setVideoStoryboardImages(JSON.parse(savedStoryboard));
     } catch {}
   }, []);
 
@@ -149,6 +161,58 @@ export default function TryOnWorkspacePage() {
         sessionStorage.removeItem("jewelai_active_tryon_result");
       }
     } catch {}
+  };
+
+  const handleUpdateCampaignResult = (newRes: PhotoshootCampaignResult | null) => {
+    setCampaignResult(newRes);
+    try {
+      if (newRes) {
+        sessionStorage.setItem("jewelai_active_campaign_result", JSON.stringify(newRes));
+      } else {
+        sessionStorage.removeItem("jewelai_active_campaign_result");
+      }
+    } catch {}
+  };
+
+  const handleUpdateVideoResult = (newRes: GeneratedVideoResult | null) => {
+    setVideoResult(newRes);
+    try {
+      if (newRes) {
+        sessionStorage.setItem("jewelai_active_video_result", JSON.stringify(newRes));
+      } else {
+        sessionStorage.removeItem("jewelai_active_video_result");
+      }
+    } catch {}
+  };
+
+  const handleUpdateStoryboardImages = (shots: string[] | null) => {
+    setVideoStoryboardImages(shots);
+    try {
+      if (shots && shots.length > 0) {
+        sessionStorage.setItem("jewelai_active_storyboard_images", JSON.stringify(shots));
+      } else {
+        sessionStorage.removeItem("jewelai_active_storyboard_images");
+      }
+    } catch {}
+  };
+
+  // Two-way synchronization of uploaded jewelry between Workspace, Photoshoot, and Video tabs
+  const handleSyncJewelry = (file: File | null, previewUrl: string | null, cat?: string) => {
+    if (file || previewUrl) {
+      setJewelryState({
+        file,
+        previewUrl,
+        name: file?.name || "Uploaded Jewelry",
+        sizeBytes: file?.size || 0,
+        isValid: true,
+      });
+      if (cat) {
+        const found = JEWELRY_CATEGORIES.find((c) => c.name.toLowerCase() === cat.toLowerCase());
+        if (found) {
+          setSelectedCategory(found.id);
+        }
+      }
+    }
   };
 
   // Scroll to result on success
@@ -405,19 +469,40 @@ export default function TryOnWorkspacePage() {
             {tryOnMode === "multi-img" ? (
               <MultiImagePhotoshoot
                 onOpenHistory={() => setIsHistoryOpen(true)}
+                initialImageUrl={jewelryState.previewUrl}
+                initialFile={jewelryState.file}
+                initialCategory={
+                  JEWELRY_CATEGORIES.find((c) => c.id === selectedCategory)?.name ||
+                  (selectedCategory === "custom" || selectedCategory === "custom-combo"
+                    ? customCategoryName
+                    : "Necklaces & Pendants")
+                }
+                campaignResult={campaignResult}
+                onUpdateCampaignResult={handleUpdateCampaignResult}
+                onSyncJewelry={handleSyncJewelry}
                 onNavigateToVideo={(imgUrl, cat, allShots) => {
                   setVideoInitialImageUrl(imgUrl);
                   if (cat) setVideoInitialCategory(cat);
-                  setVideoStoryboardImages(allShots || null);
+                  handleUpdateStoryboardImages(allShots || null);
                   setTryOnMode("image-to-video");
                 }}
               />
             ) : tryOnMode === "image-to-video" ? (
               <DirectVideoCreator
                 onOpenHistory={() => setIsHistoryOpen(true)}
-                initialImageUrl={videoInitialImageUrl || result?.imageUrl || null}
-                initialCategory={videoInitialCategory || selectedCategory}
+                initialImageUrl={videoInitialImageUrl || jewelryState.previewUrl || result?.imageUrl || null}
+                initialFile={jewelryState.file}
+                initialCategory={
+                  videoInitialCategory ||
+                  JEWELRY_CATEGORIES.find((c) => c.id === selectedCategory)?.name ||
+                  (selectedCategory === "custom" || selectedCategory === "custom-combo"
+                    ? customCategoryName
+                    : "Necklaces & Pendants")
+                }
                 storyboardImages={videoStoryboardImages}
+                videoResult={videoResult}
+                onUpdateVideoResult={handleUpdateVideoResult}
+                onSyncJewelry={handleSyncJewelry}
               />
             ) : (
               <>
@@ -645,6 +730,11 @@ export default function TryOnWorkspacePage() {
                 result={result}
                 onRegenerate={handleRegenerate}
                 isRegenerating={isGenerating}
+                onNavigateToVideo={(imgUrl, cat) => {
+                  setVideoInitialImageUrl(imgUrl);
+                  if (cat) setVideoInitialCategory(cat);
+                  setTryOnMode("image-to-video");
+                }}
               />
             </div>
           )}

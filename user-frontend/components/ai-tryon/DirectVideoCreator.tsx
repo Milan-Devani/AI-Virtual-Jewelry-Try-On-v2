@@ -40,9 +40,13 @@ import {
 interface DirectVideoCreatorProps {
   onOpenHistory?: () => void;
   initialImageUrl?: string | null;
+  initialFile?: File | null;
   initialCategory?: string | null;
   initialMotionStyle?: MotionStyle;
   storyboardImages?: string[] | null;
+  videoResult?: GeneratedVideoResult | null;
+  onUpdateVideoResult?: (result: GeneratedVideoResult | null) => void;
+  onSyncJewelry?: (file: File | null, previewUrl: string | null, category?: string) => void;
 }
 
 type MotionStyle = "ugc-cinematic" | "head-turn" | "editorial-smile" | "subtle-sparkle" | "runway-pose";
@@ -51,11 +55,15 @@ type VideoAspectRatio = "9:16" | "4:5" | "16:9";
 export function DirectVideoCreator({
   onOpenHistory,
   initialImageUrl,
+  initialFile,
   initialCategory,
   initialMotionStyle,
   storyboardImages,
+  videoResult: externalVideoResult,
+  onUpdateVideoResult,
+  onSyncJewelry,
 }: DirectVideoCreatorProps) {
-  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(initialFile || null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(initialImageUrl || null);
   const [storyboardList, setStoryboardList] = React.useState<string[]>(
     storyboardImages || []
@@ -78,16 +86,22 @@ export function DirectVideoCreator({
   const [isVideoProjectsModalOpen, setIsVideoProjectsModalOpen] = React.useState<boolean>(false);
 
   const [isRendering, setIsRendering] = React.useState(false);
-  const [videoResult, setVideoResult] = React.useState<GeneratedVideoResult | null>(null);
+  const [videoResult, setVideoResult] = React.useState<GeneratedVideoResult | null>(
+    externalVideoResult || null
+  );
   const [isVideoPlaying, setIsVideoPlaying] = React.useState(true);
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Sync if initial image changes or storyboard arrives
+  const updateVideoResult = (res: GeneratedVideoResult | null) => {
+    setVideoResult(res);
+    onUpdateVideoResult?.(res);
+  };
+
+  // Sync if initial image changes, storyboard arrives, or externalVideoResult changes
   React.useEffect(() => {
-    if (initialImageUrl) {
+    if (initialImageUrl && !selectedFile && previewUrl !== initialImageUrl) {
       setPreviewUrl(initialImageUrl);
-      setSelectedFile(null);
       if (initialMotionStyle) {
         setMotionStyle(initialMotionStyle);
       } else if (
@@ -99,7 +113,10 @@ export function DirectVideoCreator({
         setDurationSeconds(18);
       }
     }
-    if (initialCategory) {
+    if (initialFile && selectedFile !== initialFile) {
+      setSelectedFile(initialFile);
+    }
+    if (initialCategory && category !== initialCategory) {
       setCategory(initialCategory);
     }
     if (storyboardImages && storyboardImages.length > 0) {
@@ -107,7 +124,21 @@ export function DirectVideoCreator({
       setMotionStyle("ugc-cinematic");
       setDurationSeconds(18);
     }
-  }, [initialImageUrl, initialCategory, initialMotionStyle, storyboardImages]);
+    if (externalVideoResult !== undefined && externalVideoResult !== videoResult) {
+      setVideoResult(externalVideoResult);
+    }
+  }, [initialImageUrl, initialFile, initialCategory, initialMotionStyle, storyboardImages, externalVideoResult]);
+
+  const setFileAndPreview = (file: File) => {
+    if (previewUrl && previewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setSelectedFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+    updateVideoResult(null);
+    onSyncJewelry?.(file, objectUrl, category);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -123,10 +154,7 @@ export function DirectVideoCreator({
       return;
     }
 
-    setSelectedFile(file);
-    const objectUrl = URL.createObjectURL(file);
-    setPreviewUrl(objectUrl);
-    setVideoResult(null);
+    setFileAndPreview(file);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -139,20 +167,20 @@ export function DirectVideoCreator({
       return;
     }
 
-    setSelectedFile(file);
-    const objectUrl = URL.createObjectURL(file);
-    setPreviewUrl(objectUrl);
-    setVideoResult(null);
+    setFileAndPreview(file);
   };
 
   const handleUseSample = () => {
+    if (previewUrl && previewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(previewUrl);
+    }
     const sampleImg =
       initialImageUrl ||
       "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=800&auto=format&fit=crop&q=80";
     setPreviewUrl(sampleImg);
     setSelectedFile(null);
     setCategory("Necklaces & Pendants");
-    setVideoResult(null);
+    updateVideoResult(null);
     toast.info("Loaded sample luxury photoshoot image");
   };
 
@@ -185,7 +213,7 @@ export function DirectVideoCreator({
         customPrompt: combinedCustomPrompt,
       });
 
-      setVideoResult(result);
+      updateVideoResult(result);
       setIsVideoPlaying(true);
       const remainingMsg = result.credits
         ? `1 credit used • ${result.credits.remainingCredits} credits remaining`

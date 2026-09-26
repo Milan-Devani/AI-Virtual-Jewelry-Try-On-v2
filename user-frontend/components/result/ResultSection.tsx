@@ -12,6 +12,7 @@ import {
   Check,
   Share2,
   Maximize2,
+  ArrowRight,
 } from "lucide-react";
 import { TryOnGenerationResult } from "../../types";
 import { Button } from "../ui/button";
@@ -26,6 +27,7 @@ interface ResultSectionProps {
   result: TryOnGenerationResult;
   onRegenerate: () => void;
   isRegenerating?: boolean;
+  onNavigateToVideo?: (imageUrl: string, category?: string) => void;
 }
 
 type MotionStyle = "head-turn" | "editorial-smile" | "subtle-sparkle" | "runway-pose" | "ugc-cinematic";
@@ -35,6 +37,7 @@ export function ResultSection({
   result,
   onRegenerate,
   isRegenerating,
+  onNavigateToVideo,
 }: ResultSectionProps) {
   const [viewMode, setViewMode] = React.useState<"result" | "compare" | "video">("compare");
   const [isDownloading, setIsDownloading] = React.useState(false);
@@ -309,6 +312,19 @@ export function ResultSection({
               <Video className="w-3.5 h-3.5 text-[#D8B77E]" />
               <span>{isGeneratingVideo ? "Rendering 1080p Video..." : "Render AI Runway Video"}</span>
             </Button>
+
+            {onNavigateToVideo && (
+              <Button
+                variant="outline"
+                size="md"
+                type="button"
+                onClick={() => onNavigateToVideo(result.imageUrl, result.categoryName || result.category)}
+                className="flex items-center gap-1.5 border-[#D9CEBF] bg-white hover:bg-[#FAF6EE] text-[#1A1715] px-3 font-semibold text-xs h-9"
+              >
+                <span>Studio Runway</span>
+                <ArrowRight className="w-3.5 h-3.5 text-[#B38541]" />
+              </Button>
+            )}
           </div>
         </div>
 
