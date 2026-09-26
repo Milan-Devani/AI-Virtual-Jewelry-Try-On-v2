@@ -69,6 +69,7 @@ export default function TryOnWorkspacePage() {
   const [tryOnMode, setTryOnMode] = React.useState<TryOnMode>("custom-model");
   const [videoInitialImageUrl, setVideoInitialImageUrl] = React.useState<string | null>(null);
   const [videoInitialCategory, setVideoInitialCategory] = React.useState<string | null>(null);
+  const [videoStoryboardImages, setVideoStoryboardImages] = React.useState<string[] | null>(null);
 
   // AI Virtual Model Persona Config
   const [aiModelConfig, setAiModelConfig] = React.useState<AiModelConfig>({
@@ -312,7 +313,7 @@ export default function TryOnWorkspacePage() {
                     {tryOnMode === "multi-img"
                       ? "Upload 1 single jewelry product image to synthesize a 5-image commercial campaign set"
                       : tryOnMode === "image-to-video"
-                      ? "Upload any jewelry image to render 1080p 60fps Reels & Shorts with Wan 2.1"
+                      ? "Upload any jewelry image to render 1080p cinematic Reels & Shorts with Google Veo 3.1"
                       : isAiModelMode
                       ? "Upload jewelry product & customize the AI model persona"
                       : "Upload model & jewelry references • Choose category & render"}
@@ -377,7 +378,7 @@ export default function TryOnWorkspacePage() {
                   <Video className="w-3.5 h-3.5 text-[#D8B77E] shrink-0" />
                   <span className="truncate">Image to Video</span>
                   <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0] shrink-0">
-                    Wan 2.1
+                    Veo 3.1
                   </span>
                 </button>
 
@@ -404,9 +405,10 @@ export default function TryOnWorkspacePage() {
             {tryOnMode === "multi-img" ? (
               <MultiImagePhotoshoot
                 onOpenHistory={() => setIsHistoryOpen(true)}
-                onNavigateToVideo={(imgUrl, cat) => {
+                onNavigateToVideo={(imgUrl, cat, allShots) => {
                   setVideoInitialImageUrl(imgUrl);
                   if (cat) setVideoInitialCategory(cat);
+                  setVideoStoryboardImages(allShots || null);
                   setTryOnMode("image-to-video");
                 }}
               />
@@ -415,6 +417,7 @@ export default function TryOnWorkspacePage() {
                 onOpenHistory={() => setIsHistoryOpen(true)}
                 initialImageUrl={videoInitialImageUrl || result?.imageUrl || null}
                 initialCategory={videoInitialCategory || selectedCategory}
+                storyboardImages={videoStoryboardImages}
               />
             ) : (
               <>

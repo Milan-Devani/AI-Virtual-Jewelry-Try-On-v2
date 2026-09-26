@@ -16,6 +16,7 @@ export interface BuildVideoPromptOptions {
   motionStyle?: "head-turn" | "editorial-smile" | "subtle-sparkle" | "runway-pose" | "ugc-cinematic" | string;
   customPrompt?: string;
   durationSeconds?: number;
+  storyboardImages?: string[];
 }
 
 /**
@@ -329,53 +330,117 @@ export function getVideoJewelryFocusDirective(category = "jewelry"): string {
 export function buildUgcCinematicPrompt(options: BuildVideoPromptOptions | string = {}): string {
   const opts: BuildVideoPromptOptions =
     typeof options === "string" ? { category: options } : options;
-  const category = opts.category || "Mangalsutra";
-  const duration = opts.durationSeconds || 18;
-  const isMangalsutra = (category || "").toLowerCase().includes("mangalsutra");
+  const rawCategory = opts.category || "Mangalsutra";
+  const norm = rawCategory.toLowerCase().trim();
+  const isMangalsutra = norm.includes("mangalsutra");
+  const hasStoryboard = Boolean(opts.storyboardImages && opts.storyboardImages.length > 0);
+  const storyboardCount = opts.storyboardImages?.length || 8;
 
-  const productTitle = isMangalsutra
-    ? "Direct Gold Plated Mangalsutra No.132 MK"
-    : `exact ${category}`;
-
-  const elementsDesc = isMangalsutra
-    ? "The mangalsutra, pendant, black beads, gold detailing, gemstones, earrings, proportions, pattern, and craftsmanship"
-    : `The ${category}, pendant/centerpiece, chain/structure, gold detailing, gemstones, matching earrings, proportions, pattern, and craftsmanship`;
-
-  const scene1Show = isMangalsutra
-    ? "Show the full mangalsutra and matching earrings."
-    : `Show the full ${category} and matching earrings.`;
-
-  const scene2Wear = isMangalsutra
-    ? "wearing the exact same mangalsutra and matching earrings."
-    : `wearing the exact same ${category} and matching earrings.`;
-
-  const scene3Macro = isMangalsutra
-    ? "Cinematic macro camera movement toward the pendant. Show the intricate gold craftsmanship, black-bead chain, colored gemstones and hanging elements. Realistic gold reflections and tiny natural movements. Camera slowly moves from the chain toward the pendant."
-    : `Cinematic macro camera movement toward the centerpiece. Show the intricate gold craftsmanship, chain / structure, colored gemstones and hanging elements. Realistic gold reflections and tiny natural movements. Camera slowly moves from the chain toward the pendant.`;
-
-  const scene5Adjust = isMangalsutra
-    ? "Model naturally adjusts the mangalsutra with her fingers and looks down at it, then looks back toward the camera. Make the moment feel like an authentic luxury UGC jewelry recommendation rather than a traditional commercial. Natural body movement, realistic facial expression and eye movement."
-    : `Model naturally adjusts the ${category} with her fingers and looks down at it, then looks back toward the camera. Make the moment feel like an authentic luxury UGC jewelry recommendation rather than a traditional commercial. Natural body movement, realistic facial expression and eye movement.`;
-
+  // Custom user prompt override
   if (opts.customPrompt && opts.customPrompt.trim().length > 30) {
     return [
       opts.customPrompt.trim(),
-      `Ensure 100% exact reference product preservation for ${category}.`,
-      "Photorealistic live-action UGC cinematic jewelry video, 35mm and 85mm lenses, natural lighting, zero deformation.",
+      `Ensure 100% exact reference product preservation for ${rawCategory}.`,
+      hasStoryboard
+        ? `Preserve all ${storyboardCount} campaign storyboard reference images across the 7 video scenes.`
+        : "Photorealistic live-action UGC cinematic jewelry video, 35mm and 85mm lenses, natural lighting, zero deformation.",
     ].join("\n\n");
   }
 
+  // Exact Mangalsutra prompt verbatim from user specification
+  if (isMangalsutra) {
+    const storyboardRefText = hasStoryboard
+      ? `\n\nSTORYBOARD REFERENCE & PRODUCT IDENTITY LOCK: All ${storyboardCount} generated campaign shots (Mannequin Showcase, Model Front, Pendant Macro, Earring Side, Earring Macro, Lifestyle UGC, Flat Lay, Hero Portrait) are provided as locked visual reference frames. Every scene of this 15–20s video must match the exact mangalsutra pendant, black-bead chain, gemstones, earrings, and craftsmanship shown in the storyboard without morphing or redesign.`
+      : "";
+
+    return [
+      `🎬 UGC Cinematic Video Prompt\n\nReference image: Use the uploaded mangalsutra jewelry image/storyboard as the exact product reference.${storyboardRefText}`,
+      `Create a photorealistic premium UGC-style cinematic jewelry advertisement, 15–20 seconds long, featuring the exact Direct Gold Plated Mangalsutra No.132 MK shown in the reference image.`,
+      `CRITICAL PRODUCT PRESERVATION: The mangalsutra, pendant, black beads, gold detailing, gemstones, earrings, proportions, pattern, and craftsmanship must remain identical to the reference product in every shot. Do not redesign, simplify, add, remove, or morph any jewelry elements.`,
+      `Scene 1 — Product Introduction | 0–2.5s\nStart with the complete jewelry set on a dark elegant jewelry mannequin/display stand. Slow cinematic camera push-in. Show the full mangalsutra and matching earrings. Warm natural golden lighting, realistic reflections on gold, shallow depth of field, luxury Indian jewelry showroom atmosphere.`,
+      `Scene 2 — Model Wearing Jewelry | 2.5–5.5s\nCut naturally to a beautiful Indian woman wearing the exact same mangalsutra and matching earrings. Elegant cream/gold saree, natural makeup, subtle bindi, realistic skin texture. Medium front shot. She gently turns toward the camera and gives a natural subtle smile.`,
+      `Scene 3 — Pendant Macro Shot | 5.5–8s\nCinematic macro camera movement toward the pendant. Show the intricate gold craftsmanship, black-bead chain, colored gemstones and hanging elements. Realistic gold reflections and tiny natural movements. Camera slowly moves from the chain toward the pendant.`,
+      `Scene 4 — Side / Earring Shot | 8–10.5s\nModel turns her face naturally to a 3/4 side angle. Focus on the matching earring. Hair moves slightly naturally. Camera performs a smooth slow orbit. Capture realistic gold shine and detailed earring craftsmanship.`,
+      `Scene 5 — Lifestyle UGC Moment | 10.5–13.5s\nModel naturally adjusts the mangalsutra with her fingers and looks down at it, then looks back toward the camera. Make the moment feel like an authentic luxury UGC jewelry recommendation rather than a traditional commercial. Natural body movement, realistic facial expression and eye movement.`,
+      `Scene 6 — Full Jewelry Beauty Shot | 13.5–16.5s\nMedium-to-full portrait of the model wearing the complete jewelry set. She slowly walks forward or turns naturally while the camera tracks backward. Cream/gold Indian festive environment, warm practical lights, subtle background bokeh.`,
+      `Scene 7 — Final Hero Shot | 16.5–20s\nEnd with a beautiful close-to-medium portrait of the model wearing the complete set. Slow camera push-in toward the pendant and face. Finish with a clean luxury composition.`,
+      `Visual style: photorealistic, premium Indian jewelry campaign, authentic UGC feeling, cinematic but natural, realistic human skin, realistic hair, physically accurate gold reflections, natural jewelry movement, warm neutral lighting, soft shadows, shallow depth of field, 4K detail, high-end DSLR/cinema camera look.`,
+      `Camera: 35mm and 85mm cinematic lenses, slow dolly movements, subtle handheld micro-movement where appropriate, smooth tracking, macro focus pulls, realistic depth of field.`,
+      `Lighting: soft natural window light mixed with warm practical lights, no artificial plastic-looking highlights, realistic gold reflections.`,
+      `Motion: natural human movement, natural blinking, subtle breathing, realistic hand movement, realistic jewelry physics. No frozen face, no unnatural body movement.`,
+      `Overall feeling: authentic Indian woman wearing beautiful jewelry in real life, elegant, aspirational, premium, trustworthy, not obviously AI-generated.`,
+      `Best format: 9:16 vertical, 1080p/4K, 24fps, 15–20 seconds.`,
+    ].join("\n\n");
+  }
+
+  // Dynamic category handling for all other jewelry categories
+  let productTitle = `exact Direct Gold Plated ${rawCategory} Set`;
+  let elementsDesc = `The ${rawCategory}, centerpiece, gold detailing, gemstones, matching components, proportions, pattern, and craftsmanship`;
+  let scene1Product = `Show the full ${rawCategory} and matching pieces.`;
+  let scene2Wearing = `wearing the exact same ${rawCategory} and matching accessories.`;
+  let scene3Macro = `Cinematic macro camera movement toward the ${rawCategory} centerpiece. Show the intricate gold craftsmanship, gemstones, settings, and hanging elements. Realistic gold reflections and tiny natural movements. Camera slowly moves across the jewelry details.`;
+  let scene4Focus = `Model turns her face naturally to a 3/4 side angle. Focus on the jewelry detail and earring/accent. Hair moves slightly naturally. Camera performs a smooth slow orbit. Capture realistic gold shine and detailed craftsmanship.`;
+  let scene5Adjust = `Model naturally adjusts the ${rawCategory} with her fingers and looks down at it, then looks back toward the camera. Make the moment feel like an authentic luxury UGC jewelry recommendation rather than a traditional commercial. Natural body movement, realistic facial expression and eye movement.`;
+  let scene6Shot = `Medium-to-full portrait of the model wearing the complete ${rawCategory} set. She slowly walks forward or turns naturally while the camera tracks backward. Cream/gold Indian festive environment, warm practical lights, subtle background bokeh.`;
+  let scene7Hero = `End with a beautiful close-to-medium portrait of the model wearing the complete ${rawCategory} set. Slow camera push-in toward the jewelry and face. Finish with a clean luxury composition.`;
+
+  if (norm.includes("earring") || norm.includes("stud") || norm.includes("jhumka") || norm.includes("chandbali")) {
+    productTitle = `exact Direct Gold Plated ${rawCategory} Set`;
+    elementsDesc = `The ${rawCategory}, gemstone settings, gold filigree, hanging drops/latkan, hooks, prongs, and craftsmanship`;
+    scene1Product = `Show the complete pair of ${rawCategory} on an elegant dark luxury jewelry display stand.`;
+    scene2Wearing = `wearing the exact same ${rawCategory}.`;
+    scene3Macro = `Cinematic macro camera movement toward the ${rawCategory}. Show the intricate gold filigree, precious gemstones, prongs, and hanging latkan drops. Realistic gold reflections and subtle natural sway.`;
+    scene4Focus = `Model turns her head naturally to a 3/4 side profile. Camera performs a smooth slow orbit highlighting the ${rawCategory}, earlobe placement, and glistening gemstone facets.`;
+    scene5Adjust = `Model gently touches the ${rawCategory} with her fingertips and smiles toward the camera. Authentic luxury UGC beauty review moment with natural hand and eye movement.`;
+    scene6Shot = `Medium portrait of the model wearing the ${rawCategory}, hair styled back to show the earrings clearly. Warm practical studio lights and festive bokeh.`;
+    scene7Hero = `End with an intimate close-up hero portrait of the model and the ${rawCategory}. Slow camera push-in toward the earring and radiant smile.`;
+  } else if (norm.includes("bangle") || norm.includes("bracelet") || norm.includes("kada")) {
+    productTitle = `exact Direct Gold Plated ${rawCategory}`;
+    elementsDesc = `The ${rawCategory}, embossed patterns, gold carving, gemstones, clasps, diameter, and craftsmanship`;
+    scene1Product = `Show the complete ${rawCategory} on an elegant dark luxury bracelet bar display stand.`;
+    scene2Wearing = `wearing the exact same ${rawCategory} on her wrist.`;
+    scene3Macro = `Cinematic macro camera movement toward the ${rawCategory}. Show the intricate gold carvings, gemstones, prongs, and polished metal luster.`;
+    scene4Focus = `Model turns her wrist naturally. Focus on the ${rawCategory} contour and light reflections. Camera smoothly tracks the wrist curve.`;
+    scene5Adjust = `Model naturally touches and adjusts the ${rawCategory} on her wrist with her fingers, then looks up toward the camera with a genuine smile.`;
+    scene6Shot = `Medium portrait of the model elegantly displaying her adorned wrist against a luxury Indian festive backdrop.`;
+    scene7Hero = `End with a refined close-up hero shot of the model's hand and wrist wearing the ${rawCategory}.`;
+  } else if (norm.includes("ring") || norm.includes("band")) {
+    productTitle = `exact Direct Gold Plated ${rawCategory}`;
+    elementsDesc = `The ${rawCategory}, center gemstone, pavé stones, setting prongs, band engraving, and metalwork`;
+    scene1Product = `Show the complete ${rawCategory} on a dark elegant velvet ring display block.`;
+    scene2Wearing = `wearing the exact same ${rawCategory} on her ring finger.`;
+    scene3Macro = `Cinematic macro camera movement toward the ${rawCategory}. Show the intricate gemstone facets, prong setting, and gleaming band reflections.`;
+    scene4Focus = `Model tilts her hand to catch the studio light. Camera performs a smooth slow orbit capturing diamond/gemstone fire.`;
+    scene5Adjust = `Model gently admires the ${rawCategory} on her hand, touches the ring, then looks toward the camera with a confident, joyful expression.`;
+    scene6Shot = `Medium portrait of the model with hand gracefully placed near collarbone, displaying the ring in warm festive lighting.`;
+    scene7Hero = `End with a clean luxury hero close-up focusing on the ring and model's expression.`;
+  } else if (norm.includes("maang") || norm.includes("tikka") || norm.includes("matha")) {
+    productTitle = `exact Direct Gold Plated ${rawCategory}`;
+    elementsDesc = `The ${rawCategory}, forehead pendant, chain, hook, gemstones, pearls, and craftsmanship`;
+    scene1Product = `Show the complete ${rawCategory} on a dark luxury velvet mannequin bust.`;
+    scene2Wearing = `wearing the exact same ${rawCategory} centered perfectly along her hair parting.`;
+    scene3Macro = `Cinematic macro push-in toward the forehead pendant. Show the gemstone facets, pearls, and gold filigree.`;
+    scene4Focus = `Model turns slightly. Focus on the side angle and chain integration with her hair.`;
+    scene5Adjust = `Model gently touches the hair near the ${rawCategory}, smiles warmly into the camera in an authentic UGC style.`;
+    scene6Shot = `Medium front portrait of the model wearing the ${rawCategory} in an opulent Indian bridal setting.`;
+    scene7Hero = `Hero close-up portrait of the model's forehead and eyes, beautifully framed by the ${rawCategory}.`;
+  }
+
+  const storyboardRefText = hasStoryboard
+    ? `\n\nSTORYBOARD REFERENCE & PRODUCT IDENTITY LOCK: All ${storyboardCount} generated campaign shots (Showcase, Model Front, Macro Details, Side Profile, Lifestyle UGC, Flat Lay, Hero Portrait) are provided as locked visual reference frames. Every scene of this 15–20s video must preserve the exact ${rawCategory} product identity, stones, metalwork, and proportions shown in the storyboard without morphing or redesign.`
+    : "";
+
   return [
-    `🎬 UGC Cinematic Video Prompt\n\nReference image: Use the uploaded ${category} jewelry image/storyboard as the exact product reference.`,
-    `Create a photorealistic premium UGC-style cinematic jewelry advertisement, 15–20 seconds long, featuring the exact ${productTitle} shown in the reference image.`,
+    `🎬 UGC Cinematic Video Prompt\n\nReference image: Use the uploaded ${rawCategory} jewelry image/storyboard as the exact product reference.${storyboardRefText}`,
+    `Create a photorealistic premium UGC-style cinematic jewelry advertisement, 15–20 seconds long, featuring the ${productTitle} shown in the reference image.`,
     `CRITICAL PRODUCT PRESERVATION: ${elementsDesc} must remain identical to the reference product in every shot. Do not redesign, simplify, add, remove, or morph any jewelry elements.`,
-    `Scene 1 — Product Introduction | 0–2.5s\nStart with the complete jewelry set on a dark elegant jewelry mannequin/display stand. Slow cinematic camera push-in. ${scene1Show} Warm natural golden lighting, realistic reflections on gold, shallow depth of field, luxury Indian jewelry showroom atmosphere.`,
-    `Scene 2 — Model Wearing Jewelry | 2.5–5.5s\nCut naturally to a beautiful Indian woman ${scene2Wear} Elegant cream/gold saree, natural makeup, subtle bindi, realistic skin texture. Medium front shot. She gently turns toward the camera and gives a natural subtle smile.`,
-    `Scene 3 — Pendant Macro Shot | 5.5–8s\n${scene3Macro}`,
-    `Scene 4 — Side / Earring Shot | 8–10.5s\nModel turns her face naturally to a 3/4 side angle. Focus on the matching earring. Hair moves slightly naturally. Camera performs a smooth slow orbit. Capture realistic gold shine and detailed earring craftsmanship.`,
+    `Scene 1 — Product Introduction | 0–2.5s\nStart with the complete jewelry set on a dark elegant jewelry mannequin/display stand. Slow cinematic camera push-in. ${scene1Product} Warm natural golden lighting, realistic reflections on gold, shallow depth of field, luxury Indian jewelry showroom atmosphere.`,
+    `Scene 2 — Model Wearing Jewelry | 2.5–5.5s\nCut naturally to a beautiful Indian woman ${scene2Wearing} Elegant cream/gold saree, natural makeup, subtle bindi, realistic skin texture. Medium front shot. She gently turns toward the camera and gives a natural subtle smile.`,
+    `Scene 3 — Macro Shot | 5.5–8s\n${scene3Macro}`,
+    `Scene 4 — Angle & Detail Shot | 8–10.5s\n${scene4Focus}`,
     `Scene 5 — Lifestyle UGC Moment | 10.5–13.5s\n${scene5Adjust}`,
-    `Scene 6 — Full Jewelry Beauty Shot | 13.5–16.5s\nMedium-to-full portrait of the model wearing the complete jewelry set. She slowly walks forward or turns naturally while the camera tracks backward. Cream/gold Indian festive environment, warm practical lights, subtle background bokeh.`,
-    `Scene 7 — Final Hero Shot | 16.5–20s\nEnd with a beautiful close-to-medium portrait of the model wearing the complete set. Slow camera push-in toward the pendant and face. Finish with a clean luxury composition.`,
+    `Scene 6 — Full Jewelry Beauty Shot | 13.5–16.5s\n${scene6Shot}`,
+    `Scene 7 — Final Hero Shot | 16.5–20s\n${scene7Hero}`,
     `Visual style: photorealistic, premium Indian jewelry campaign, authentic UGC feeling, cinematic but natural, realistic human skin, realistic hair, physically accurate gold reflections, natural jewelry movement, warm neutral lighting, soft shadows, shallow depth of field, 4K detail, high-end DSLR/cinema camera look.`,
     `Camera: 35mm and 85mm cinematic lenses, slow dolly movements, subtle handheld micro-movement where appropriate, smooth tracking, macro focus pulls, realistic depth of field.`,
     `Lighting: soft natural window light mixed with warm practical lights, no artificial plastic-looking highlights, realistic gold reflections.`,

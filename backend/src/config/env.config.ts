@@ -28,9 +28,10 @@ const envSchema = z.object({
   // Database
   DATABASE_URL: z.string().optional().default(""),
 
-  // Gemini AI Image Configuration
+  // Gemini AI Image & Video Configuration
   GEMINI_API_KEY: z.string().optional().default(""),
-  GEMINI_IMAGE_MODEL: z.string().default("gemini-2.5-flash-image"),
+  GEMINI_IMAGE_MODEL: z.string().default("gemini-3-pro-image"),
+  GEMINI_VIDEO_MODEL: z.string().default("veo-3.1-generate-preview"),
 
   // UPI Configuration
   UPI_ID: z.string().default("jewelai@upi"),
@@ -80,6 +81,7 @@ export const config = {
   gemini: {
     apiKey: process.env.GEMINI_KEY || process.env.GEMINI_API_KEY || "",
     imageModel: env.GEMINI_IMAGE_MODEL,
+    videoModel: env.GEMINI_VIDEO_MODEL || "veo-3.1-generate-preview",
   },
   video: {
     falKey: env.FAL_KEY || process.env.FAL_KEY || "",

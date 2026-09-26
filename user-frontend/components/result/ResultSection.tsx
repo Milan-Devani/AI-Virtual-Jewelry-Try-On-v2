@@ -84,7 +84,7 @@ export function ResultSection({
     try {
       setIsGeneratingVideo(true);
       toast.info("Submitting AI Video request...", {
-        description: "Rendering photorealistic motion with Wan 2.1 (this usually takes 1-2 mins on free GPU).",
+        description: "Rendering photorealistic cinema motion with Google Veo 3.1 (~45s).",
       });
 
       const video = await generateVideoApi({
@@ -262,7 +262,7 @@ export function ResultSection({
                 Turn into AI Runway Video (Reels &amp; Shorts)
               </h3>
               <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]">
-                Wan 2.1 Free
+                Google Veo 3.1 Cinema
               </span>
             </div>
             <p className="text-xs text-[#7A736B]">
@@ -317,7 +317,7 @@ export function ResultSection({
           <div className="mt-3 p-3 rounded-xl bg-white/80 border border-[#E5DAC6] flex items-center gap-3 animate-pulse">
             <div className="w-3 h-3 rounded-full bg-[#B38541] animate-ping" />
             <p className="text-xs text-[#7A6237] font-medium">
-              Generating high-resolution jewelry video via Wan 2.1 ZeroGPU. Simulating authentic light caustics and fine hair physics...
+              Generating cinema-grade jewelry motion video via Google Veo 3.1. Simulating authentic light caustics and physical jewelry reflections...
             </p>
           </div>
         )}

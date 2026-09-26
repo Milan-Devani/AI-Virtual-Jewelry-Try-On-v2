@@ -159,4 +159,66 @@ describe("Photorealistic Luxury Jewelry Fashion Campaign Video Prompt Engine", (
     expect(prompt).toContain("Motion: natural human movement, natural blinking");
     expect(prompt).toContain("Best format: 9:16 vertical, 1080p/4K, 24fps");
   });
+
+  it("locks 8-shot storyboard references when multiple generated images are provided", () => {
+    const mockShots = [
+      "https://example.com/shot_1.webp",
+      "https://example.com/shot_2.webp",
+      "https://example.com/shot_3.webp",
+      "https://example.com/shot_4.webp",
+      "https://example.com/shot_5.webp",
+      "https://example.com/shot_6.webp",
+      "https://example.com/shot_7.webp",
+      "https://example.com/shot_8.webp",
+    ];
+
+    const prompt = buildVideoPrompt({
+      category: "Mangalsutra",
+      motionStyle: "ugc-cinematic",
+      durationSeconds: 20,
+      storyboardImages: mockShots,
+    });
+
+    expect(prompt).toContain("STORYBOARD REFERENCE & PRODUCT IDENTITY LOCK");
+    expect(prompt).toContain("All 8 generated campaign shots");
+    expect(prompt).toContain("Mannequin Showcase, Model Front, Pendant Macro, Earring Side, Earring Macro, Lifestyle UGC, Flat Lay, Hero Portrait");
+    expect(prompt).toContain("locked visual reference frames");
+  });
+
+  it("dynamically adapts 7-scene UGC cinematic prompt to other categories without breaking", () => {
+    // Jhumkas / Earrings
+    const earringsPrompt = buildVideoPrompt({
+      category: "Jhumkas",
+      motionStyle: "ugc-cinematic",
+      durationSeconds: 18,
+      storyboardImages: ["s1.webp", "s2.webp"],
+    });
+
+    expect(earringsPrompt).toContain("🎬 UGC Cinematic Video Prompt");
+    expect(earringsPrompt).toContain("exact Direct Gold Plated Jhumkas Set");
+    expect(earringsPrompt).toContain("Scene 1 — Product Introduction | 0–2.5s");
+    expect(earringsPrompt).toContain("Scene 2 — Model Wearing Jewelry | 2.5–5.5s");
+    expect(earringsPrompt).toContain("Scene 3 — Macro Shot | 5.5–8s");
+    expect(earringsPrompt).toContain("Scene 4 — Angle & Detail Shot | 8–10.5s");
+    expect(earringsPrompt).toContain("Scene 5 — Lifestyle UGC Moment | 10.5–13.5s");
+    expect(earringsPrompt).toContain("STORYBOARD REFERENCE & PRODUCT IDENTITY LOCK: All 2 generated campaign shots");
+
+    // Bangles
+    const banglesPrompt = buildVideoPrompt({
+      category: "Bangles",
+      motionStyle: "ugc-cinematic",
+      durationSeconds: 15,
+    });
+    expect(banglesPrompt).toContain("exact Direct Gold Plated Bangles");
+    expect(banglesPrompt).toContain("wrist");
+
+    // Rings
+    const ringsPrompt = buildVideoPrompt({
+      category: "Rings",
+      motionStyle: "ugc-cinematic",
+      durationSeconds: 15,
+    });
+    expect(ringsPrompt).toContain("exact Direct Gold Plated Rings");
+    expect(ringsPrompt).toContain("ring finger");
+  });
 });

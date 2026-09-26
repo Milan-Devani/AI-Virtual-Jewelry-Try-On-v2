@@ -538,6 +538,7 @@ export async function deleteHistoryApi(id: string): Promise<void> {
 export interface GenerateVideoParams {
   imageUrl?: string;
   imageFile?: File | null;
+  storyboardImages?: string[];
   category?: string;
   aspectRatio?: "9:16" | "4:5" | "16:9" | "1:1";
   motionStyle?: "head-turn" | "editorial-smile" | "subtle-sparkle" | "runway-pose" | "ugc-cinematic";
@@ -550,6 +551,7 @@ export interface GeneratedVideoResult {
   id: string;
   videoUrl: string;
   thumbnailUrl: string;
+  storyboardImages?: string[];
   aspectRatio: string;
   durationSeconds: number;
   motionStyle: string;
@@ -572,6 +574,9 @@ export async function generateVideoApi(params: GenerateVideoParams): Promise<Gen
   if (params.imageFile) {
     const formData = new FormData();
     formData.append("image", params.imageFile);
+    if (params.storyboardImages && params.storyboardImages.length > 0) {
+      formData.append("storyboardImages", JSON.stringify(params.storyboardImages));
+    }
     if (params.category) formData.append("category", params.category);
     if (params.aspectRatio) formData.append("aspectRatio", params.aspectRatio);
     if (params.motionStyle) formData.append("motionStyle", params.motionStyle);

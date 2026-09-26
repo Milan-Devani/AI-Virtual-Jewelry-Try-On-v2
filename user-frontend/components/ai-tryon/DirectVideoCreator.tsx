@@ -42,6 +42,7 @@ interface DirectVideoCreatorProps {
   initialImageUrl?: string | null;
   initialCategory?: string | null;
   initialMotionStyle?: MotionStyle;
+  storyboardImages?: string[] | null;
 }
 
 type MotionStyle = "ugc-cinematic" | "head-turn" | "editorial-smile" | "subtle-sparkle" | "runway-pose";
@@ -52,9 +53,13 @@ export function DirectVideoCreator({
   initialImageUrl,
   initialCategory,
   initialMotionStyle,
+  storyboardImages,
 }: DirectVideoCreatorProps) {
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(initialImageUrl || null);
+  const [storyboardList, setStoryboardList] = React.useState<string[]>(
+    storyboardImages || []
+  );
   const [aspectRatio, setAspectRatio] = React.useState<VideoAspectRatio>("9:16");
   const [motionStyle, setMotionStyle] = React.useState<MotionStyle>(
     initialMotionStyle || "ugc-cinematic"
@@ -63,7 +68,7 @@ export function DirectVideoCreator({
   const [selectedModelPersona, setSelectedModelPersona] = React.useState<VideoProjectModelPersona>(
     FASHION_VIDEO_MODELS[0]
   );
-  const [durationSeconds, setDurationSeconds] = React.useState<number>(15);
+  const [durationSeconds, setDurationSeconds] = React.useState<number>(18);
   const [customPrompt, setCustomPrompt] = React.useState<string>("");
   const [showPromptDetails, setShowPromptDetails] = React.useState<boolean>(false);
 
@@ -78,21 +83,31 @@ export function DirectVideoCreator({
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Sync if initial image changes
+  // Sync if initial image changes or storyboard arrives
   React.useEffect(() => {
     if (initialImageUrl) {
       setPreviewUrl(initialImageUrl);
       setSelectedFile(null);
       if (initialMotionStyle) {
         setMotionStyle(initialMotionStyle);
-      } else if (initialImageUrl.includes("lifestyle-ugc") || initialImageUrl.includes("shot_6")) {
+      } else if (
+        initialImageUrl.includes("lifestyle-ugc") ||
+        initialImageUrl.includes("shot_6") ||
+        (storyboardImages && storyboardImages.length > 0)
+      ) {
         setMotionStyle("ugc-cinematic");
+        setDurationSeconds(18);
       }
     }
     if (initialCategory) {
       setCategory(initialCategory);
     }
-  }, [initialImageUrl, initialCategory, initialMotionStyle]);
+    if (storyboardImages && storyboardImages.length > 0) {
+      setStoryboardList(storyboardImages);
+      setMotionStyle("ugc-cinematic");
+      setDurationSeconds(18);
+    }
+  }, [initialImageUrl, initialCategory, initialMotionStyle, storyboardImages]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -148,7 +163,7 @@ export function DirectVideoCreator({
     }
 
     setIsRendering(true);
-    toast.info("Connecting to Wan 2.1 GPU engine... Synthesizing 1080p motion video.", {
+    toast.info("Connecting to Google Veo 3.1 Cinema Engine... Synthesizing 1080p motion video.", {
       icon: "🎬",
       duration: 5000,
     });
@@ -162,6 +177,7 @@ export function DirectVideoCreator({
       const result = await generateVideoApi({
         imageFile: selectedFile || undefined,
         imageUrl: !selectedFile && previewUrl ? previewUrl : undefined,
+        storyboardImages: storyboardList.length > 0 ? storyboardList : undefined,
         category,
         aspectRatio,
         motionStyle,
@@ -272,7 +288,7 @@ export function DirectVideoCreator({
                 Direct Image-to-Video Runway Studio
               </h3>
               <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]">
-                Wan 2.1 Free
+                Google Veo 3.1 Cinema
               </span>
             </div>
             <p className="text-xs text-[#7A6E61] mt-0.5">
@@ -361,6 +377,76 @@ export function DirectVideoCreator({
           ))}
         </div>
       </div>
+
+      {/* 8-Shot Storyboard Filmstrip Bar */}
+      {storyboardList.length > 0 && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#171513] via-[#241F1A] to-[#171513] text-white border border-[#D9C4A2]/40 shadow-lg space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#10B981] animate-ping" />
+              <h4 className="font-serif font-bold text-sm sm:text-base text-[#F8F5EE] flex items-center gap-2">
+                <span>🎬 8-Shot Storyboard Reference Locked</span>
+                <span className="text-[10px] font-sans font-bold px-2 py-0.5 rounded-full bg-[#D8B77E]/30 text-[#F5E6CC] border border-[#D8B77E]/40 uppercase tracking-wider">
+                  7-Scene UGC Engine Active
+                </span>
+              </h4>
+            </div>
+            <p className="text-[11px] text-[#D8C7B0]">
+              Click any frame to set as primary opening shot (all 8 shots are conditioned in prompt)
+            </p>
+          </div>
+
+          <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+            {storyboardList.map((imgUrl, idx) => {
+              const labels = [
+                "1. Showcase",
+                "2. Front View",
+                "3. Pendant Macro",
+                "4. Side Earring",
+                "5. Earring Macro",
+                "6. UGC Lifestyle",
+                "7. Silk Flatlay",
+                "8. Hero Portrait",
+              ];
+              const isSelected = previewUrl === imgUrl;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setPreviewUrl(imgUrl);
+                    setSelectedFile(null);
+                    toast.info(`Opening shot set to: ${labels[idx] || `Shot ${idx + 1}`}`);
+                  }}
+                  className={cn(
+                    "group relative aspect-[3/4] rounded-xl overflow-hidden border transition-all text-left",
+                    isSelected
+                      ? "border-[#D8B77E] ring-2 ring-[#D8B77E] shadow-md scale-[1.03]"
+                      : "border-white/20 hover:border-white/50 opacity-80 hover:opacity-100"
+                  )}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={imgUrl}
+                    alt={labels[idx] || `Shot ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-1">
+                    <span className="text-[8px] font-bold text-white truncate w-full">
+                      {labels[idx]?.split(". ")[1] || `Shot ${idx + 1}`}
+                    </span>
+                  </div>
+                  {isSelected && (
+                    <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#D8B77E] text-[#1A1715] flex items-center justify-center">
+                      <Check className="w-2.5 h-2.5 stroke-[3]" />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Image Upload & Preview (5 cols) */}
@@ -693,14 +779,14 @@ export function DirectVideoCreator({
               className="w-full bg-[#1A1715] hover:bg-[#2A2622] text-[#FBF9F5] border border-[#3E3832] py-3.5 font-bold text-sm shadow-md"
             >
               <Video className="w-4 h-4 text-[#D8B77E]" />
-              <span>{isRendering ? "Rendering 1080p Video on GPU..." : "Render AI Runway Video (Wan 2.1 Free)"}</span>
+              <span>{isRendering ? "Rendering 1080p Cinema Video with Google Veo 3.1..." : "Render AI Runway Video (Google Veo 3.1)"}</span>
             </Button>
 
             {isRendering && (
               <div className="p-3 rounded-xl bg-[#FAF5EB] border border-[#E6DAC8] flex items-center gap-3 animate-pulse">
                 <div className="w-2.5 h-2.5 rounded-full bg-[#B38541] animate-ping" />
                 <p className="text-xs text-[#7A6237] font-medium">
-                  Wan 2.1 ZeroGPU worker active: Simulating physical light caustics, micro eye blinks &amp; hair physics (~35s)...
+                  Google Veo 3.1 Cinema Engine active: Generating 1080p photorealistic jewelry motion take with authentic light caustics (~45s)...
                 </p>
               </div>
             )}

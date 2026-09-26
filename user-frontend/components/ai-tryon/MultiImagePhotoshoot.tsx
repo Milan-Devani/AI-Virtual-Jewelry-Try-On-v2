@@ -36,7 +36,7 @@ import { cn } from "../../lib/utils";
 
 interface MultiImagePhotoshootProps {
   onOpenHistory?: () => void;
-  onNavigateToVideo?: (imageUrl: string, category?: string) => void;
+  onNavigateToVideo?: (imageUrl: string, category?: string, allShots?: string[]) => void;
 }
 
 type PhotoshootTheme = "luxury-studio" | "royal-bridal" | "minimal-white" | "dark-editorial";
@@ -124,7 +124,7 @@ const SAMPLE_JEWELRY = [
   {
     name: "Gold Filigree Temple Bangle",
     category: "Bangles",
-    url: "https://images.unsplash.com/photo-1611591477281-420bf845659c?w=800&auto=format&fit=crop&q=80",
+    url: "https://images.unsplash.com/photo-1617038220319-276d3cfab638?w=800&auto=format&fit=crop&q=80",
   },
 ];
 
@@ -289,12 +289,35 @@ export function MultiImagePhotoshoot({
 
   const handleSendToVideoStudio = (shot: PhotoshootShotResult) => {
     if (onNavigateToVideo) {
-      onNavigateToVideo(shot.imageUrl, category);
+      const allShotUrls = campaignResult?.shots?.map((s) => s.imageUrl) || [shot.imageUrl];
+      onNavigateToVideo(shot.imageUrl, category, allShotUrls);
       toast.success("Image transferred to AI Video Runway Studio!", {
         icon: "🎬",
+        description: `Passed all ${allShotUrls.length} campaign shots as storyboard reference.`,
       });
     } else {
       toast.info("Switch to the 'Image to Video' tab to render video for this shot.");
+    }
+  };
+
+  const handleCreateCampaignVideo = () => {
+    if (!campaignResult?.shots?.length) return;
+    const allShotUrls = campaignResult.shots.map((s) => s.imageUrl);
+    // Prefer Shot 1 (showcase) or source jewelry as primary starting frame
+    const primaryAnchor =
+      campaignResult.shots[0]?.imageUrl ||
+      campaignResult.sourceJewelryUrl ||
+      previewUrl ||
+      allShotUrls[0];
+
+    if (onNavigateToVideo) {
+      onNavigateToVideo(primaryAnchor, campaignResult.category, allShotUrls);
+      toast.success("Transferred all 8 shots to UGC Cinematic Video Studio!", {
+        icon: "🎬",
+        description: "7-Scene UGC cinematic storyboard locked with strict product identity preservation.",
+      });
+    } else {
+      toast.info("Switch to the 'Image to Video' tab to render video.");
     }
   };
 
@@ -733,7 +756,16 @@ export function MultiImagePhotoshoot({
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleCreateCampaignVideo}
+                className="bg-gradient-to-r from-[#B38541] via-[#D8B77E] to-[#E8C88C] text-[#1A1715] hover:brightness-105 font-bold text-xs shadow-md rounded-xl flex items-center gap-1.5 px-3.5"
+              >
+                <Film className="w-3.5 h-3.5 text-[#1A1715]" />
+                <span>🎬 Create UGC Video (All 8 Shots)</span>
+              </Button>
               <Button
                 type="button"
                 variant="outline"
@@ -743,6 +775,44 @@ export function MultiImagePhotoshoot({
               >
                 <Download className="w-3.5 h-3.5 mr-1.5" />
                 Download All 8 Separate Images
+              </Button>
+            </div>
+          </div>
+
+          {/* 8-Shot UGC Cinematic Video Banner */}
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1A1715] via-[#2A231C] to-[#1A1715] p-5 border border-[#D9C4A2]/30 shadow-lg text-white">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[#D8B77E]/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-[#D8B77E]/20 text-[#D8B77E] flex items-center justify-center shrink-0 border border-[#D8B77E]/30 shadow-inner">
+                  <Film className="w-6 h-6 animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h4 className="font-serif font-bold text-base text-[#F8F5EE]">
+                      15–20s UGC Cinematic Video from Campaign
+                    </h4>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#D8B77E]/30 text-[#F5E6CC] border border-[#D8B77E]/40 uppercase tracking-wider">
+                      7-Scene Storyboard
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#10B981]/20 text-[#6EE7B7] border border-[#10B981]/30 uppercase tracking-wider">
+                      Strict Product Lock
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#D8C7B0] mt-1 leading-relaxed">
+                    Convert all 8 generated photographs into a cinematic Indian luxury jewelry UGC advertisement (0–20s: Showcase, Model Front, Macro Pendant, Side Earring, UGC Lifestyle, Festive Beauty, Final Hero).
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                onClick={handleCreateCampaignVideo}
+                className="w-full md:w-auto bg-gradient-to-r from-[#D8B77E] via-[#E8C88C] to-[#D8B77E] text-[#1A1715] hover:brightness-105 font-bold text-xs px-5 py-3 rounded-xl shadow-lg shrink-0 flex items-center justify-center gap-2 transition-all"
+              >
+                <Film className="w-4 h-4 text-[#1A1715]" />
+                <span>Generate UGC Video (All 8 Shots)</span>
+                <ChevronRight className="w-4 h-4 text-[#1A1715]" />
               </Button>
             </div>
           </div>

@@ -27,12 +27,12 @@ export class GeminiImageProvider implements ImageGenerationProvider {
 
   constructor() {
     this.apiKey = config.gemini.apiKey;
-    this.primaryModel = config.gemini.imageModel || "gemini-2.5-flash-image";
+    this.primaryModel = config.gemini.imageModel || "gemini-3-pro-image";
     this.candidateModels = [
       this.primaryModel,
-      "gemini-2.5-flash-image",
-      "gemini-3.1-flash-image",
       "gemini-3-pro-image",
+      "gemini-3.1-flash-image",
+      "gemini-2.5-flash-image",
     ].filter((m, i, arr) => arr.indexOf(m) === i);
   }
 

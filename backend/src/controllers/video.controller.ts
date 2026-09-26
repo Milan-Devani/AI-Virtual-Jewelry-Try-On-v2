@@ -8,6 +8,19 @@ import { ApiSuccessResponse } from "../types/index.js";
 
 const generateVideoSchema = z.object({
   imageUrl: z.string().min(1, "Image or uploaded file is required"),
+  storyboardImages: z
+    .union([z.array(z.string()), z.string()])
+    .optional()
+    .transform((val) => {
+      if (!val) return undefined;
+      if (Array.isArray(val)) return val;
+      try {
+        const parsed = JSON.parse(val);
+        return Array.isArray(parsed) ? parsed : [val];
+      } catch {
+        return [val];
+      }
+    }),
   category: z.string().optional().default("jewelry"),
   aspectRatio: z.enum(["9:16", "4:5", "16:9", "1:1"]).optional().default("9:16"),
   motionStyle: z.enum(["head-turn", "editorial-smile", "subtle-sparkle", "runway-pose", "ugc-cinematic"]).optional().default("ugc-cinematic"),

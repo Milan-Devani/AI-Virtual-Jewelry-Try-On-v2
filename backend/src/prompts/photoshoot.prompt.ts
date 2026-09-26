@@ -94,7 +94,7 @@ function getCategoryTerminology(category: string): {
       productName: "mangalsutra necklace and matching earrings",
       elements: "black-bead mangalsutra chain, gold pendant, gemstones, hanging elements, and matching reference earrings",
       pendantDesc: "pendant and the surrounding black-and-gold bead chains",
-      earringDesc: "exact matching gold earring from the reference image, preserving its specific upper colored gemstone stud, ornate center gold plate with colored stone, and delicate hanging gold drop charms (strictly NOT a generic jhumka)",
+      earringDesc: "exact matching gold earring shown on the small stands in the reference image (strictly matching the earring stands, without adding any floral connector or motif from the mangalsutra pendant)",
       mannequinDesc: "elegant dark charcoal jewelry mannequin and matching earring stands",
     };
   }
@@ -104,7 +104,7 @@ function getCategoryTerminology(category: string): {
       productName: "necklace and matching earrings",
       elements: "necklace chain, central pendant, gemstones, filigree drops, and matching reference earrings",
       pendantDesc: "pendant and the surrounding necklace chain / choker structure",
-      earringDesc: "exact matching earring shown in the uploaded reference, preserving its identical silhouette, gemstones, and hanging elements (strictly NOT a generic jhumka)",
+      earringDesc: "exact matching earring shown in the uploaded reference, preserving its identical silhouette, gemstones, and hanging elements (strictly matching the earring from the reference without adding any extra parts from the necklace)",
       mannequinDesc: "elegant dark charcoal jewelry neck mannequin and matching display stands",
     };
   }
@@ -177,6 +177,7 @@ export function buildShotPrompt(
   options: PhotoshootPromptOptions
 ): { prompt: string; title: string; description: string } {
   const { category = "Mangalsutra", theme = "luxury-studio", aspectRatio = "4:5" } = options;
+  const cat = (category || "").toLowerCase();
   const terms = getCategoryTerminology(category);
   const aspectText = `Aspect: ${aspectRatio} vertical`;
 
@@ -250,19 +251,51 @@ Do not modify, simplify, add, remove, or redesign any jewelry element.
 ${aspectText}`;
       break;
 
-    // IMAGE 4 — Earring Side Portrait
+    // IMAGE 4 — Side & Profile View
     case "earring-side":
     case "alternate-model":
     case "storyboard-profile":
-    case "product-angle":
-      shotTitle = "Image 4 — Earring Side Portrait";
-      shotDescription = "Side-profile portrait turned 70° to the side, highlighting the exact reference earring under warm natural window light.";
-      promptBody = `Create a photorealistic side-profile luxury jewelry portrait using the uploaded jewelry image as the exact reference.
+    case "product-angle": {
+      const isWristwear = cat.includes("bangle") || cat.includes("bracelet") || cat.includes("kada");
+      const isRing = cat.includes("ring");
+      const isMaangTikka = cat.includes("maang") || cat.includes("tikka") || cat.includes("matha");
 
-HERO FOCUS — EXACT REFERENCE EARRING:
+      if (isWristwear) {
+        shotTitle = "Image 4 — Side & Wrist Angle View";
+        shotDescription = "Graceful 3/4 angle portrait of the model displaying the exact reference bangle/bracelet on her wrist.";
+        promptBody = `Create a photorealistic luxury jewelry portrait using the uploaded jewelry image as the exact product reference.
+Focus on the model's hand and wrist turned at an elegant 3/4 angle, displaying the EXACT ${terms.productName} from the reference image.
+Preserve the exact bangle diameter, carvings, gemstones, and gold finish.
+Warm natural lighting, realistic skin texture, soft studio background.
+${aspectText}`;
+      } else if (isRing) {
+        shotTitle = "Image 4 — Hand & Finger Profile View";
+        shotDescription = "Elegant side angle portrait highlighting the exact reference ring worn on the model's hand.";
+        promptBody = `Create a photorealistic luxury jewelry portrait using the uploaded jewelry image as the exact product reference.
+Focus on the model's hand gracefully posed near her collarbone, displaying the EXACT ${terms.productName} on her finger.
+Preserve the exact ring shank, crown, center gemstone, and setting from the reference.
+Warm natural lighting, realistic skin texture, elegant Indian attire.
+${aspectText}`;
+      } else if (isMaangTikka) {
+        shotTitle = "Image 4 — Hair Parting & Side Profile View";
+        shotDescription = "Side-profile portrait showing the exact maang tikka chain along the hair parting.";
+        promptBody = `Create a photorealistic side-profile luxury jewelry portrait using the uploaded jewelry image as the exact product reference.
+The model's head is turned at a 3/4 angle, clearly showing the EXACT ${terms.productName} connecting chain along her hair parting and forehead.
+Preserve the exact pearl drops, gemstones, and gold craftsmanship.
+${aspectText}`;
+      } else {
+        shotTitle = "Image 4 — Earring Side Portrait";
+        shotDescription = "Side-profile portrait turned 70° to the side, highlighting the exact reference earring under warm natural window light.";
+        promptBody = `Create a photorealistic side-profile luxury jewelry portrait using the uploaded jewelry image as the exact reference.
+
+HERO FOCUS — EXACT REFERENCE EARRING (ZERO MOTIF TRANSFER):
 The model's face is turned approximately 70 degrees to the side, placing the visible ear and the earring as the PRIMARY HERO of this photograph.
-She is wearing the EXACT matching earring from the uploaded product reference image. Look directly at the earrings shown in the uploaded jewelry image: replicate its precise shape, silhouette, upper gemstone stud (with red/colored stone), ornate center gold plate motif (with central colored gemstone), and the exact delicate hanging gold drop charms dangling below.
-ZERO SUBSTITUTION: Under no circumstances should this be a generic jhumka, large umbrella bell earring, or different design. The earring must match the uploaded reference with 100% photographic accuracy, identical in every way to the earring in the product set.
+She is wearing the EXACT matching earring shown in the uploaded reference image.
+
+CRITICAL MANDATE — ZERO MOTIF TRANSFER:
+Look ONLY at the earring sitting on its separate small stand at the bottom of the reference photo. Replicate its exact silhouette, dimensions, gemstones, and hanging charms with 100% fidelity.
+DO NOT take the floral connector, top flower motif, or any piece from the necklace / mangalsutra pendant and attach it to the earring! The earring has NO extra floral connector above it.
+DO NOT substitute with a generic jhumka or alter the design. Both the necklace around her neck and the earring on her ear must remain 100% faithful to their separate appearances in the reference image.
 
 HAIR & STYLING:
 Her dark hair is styled in an elegant, neat low chignon bun, cleanly tucked behind her ear so the entire earring is unobstructed, fully visible, and sharply in focus. Natural skin texture, subtle makeup, and realistic ear anatomy.
@@ -276,15 +309,44 @@ Warm natural window light mixed with subtle golden ambient studio lighting. Shar
 The jewelry must remain 100% identical to the uploaded reference image. Do not invent, alter, or substitute any jewelry piece.
 
 ${aspectText}`;
+      }
       break;
+    }
 
-    // IMAGE 5 — Earring Macro
-    case "earring-macro":
-      shotTitle = "Image 5 — Earring Macro";
-      shotDescription = "Ultra-realistic macro close-up of the earring worn naturally on the ear, showing gold structure and colored stones.";
-      promptBody = `Create an ultra-realistic macro close-up photograph of the EXACT matching gold ${terms.earringDesc} from the uploaded jewelry reference image.
+    // IMAGE 5 — Macro Detail
+    case "earring-macro": {
+      const isWristwear = cat.includes("bangle") || cat.includes("bracelet") || cat.includes("kada");
+      const isRing = cat.includes("ring");
+      const isMaangTikka = cat.includes("maang") || cat.includes("tikka") || cat.includes("matha");
 
-The piece is worn naturally on an Indian woman's earlobe. Show the entire piece clearly in sharp macro detail, including the upper gemstone stud section, intricate gold structure with center motif plate and colored stone, and delicate hanging gold drop charms.
+      if (isWristwear) {
+        shotTitle = "Image 5 — Bangle Macro Close-Up";
+        shotDescription = "Ultra-realistic macro close-up of the bangle / bracelet showing intricate gold engravings, gemstones, and clasp.";
+        promptBody = `Create an ultra-realistic macro close-up photograph of the EXACT ${terms.productName} from the uploaded jewelry reference image.
+Focus tightly on the centerpiece, gold engravings, gemstone settings, and metal polish.
+Natural skin texture in the background, sharp jewelry details, physically accurate gold reflections.
+Do not modify or alter any part of the jewelry.
+${aspectText}`;
+      } else if (isRing) {
+        shotTitle = "Image 5 — Ring Macro Close-Up";
+        shotDescription = "Ultra-realistic macro close-up of the ring crown, center gemstone facets, prongs, and precious metal band.";
+        promptBody = `Create an ultra-realistic macro close-up photograph of the EXACT ${terms.productName} from the uploaded jewelry reference image.
+Focus tightly on the center gemstone facets, prongs, and precious metal band.
+Extreme sharp detail, prismatic gemstone reflections, natural skin texture, luxury jewelry campaign look.
+${aspectText}`;
+      } else if (isMaangTikka) {
+        shotTitle = "Image 5 — Medallion Macro Close-Up";
+        shotDescription = "Ultra-realistic macro close-up of the forehead medallion and delicate pearl drops.";
+        promptBody = `Create an ultra-realistic macro close-up photograph of the EXACT ${terms.productName} from the uploaded jewelry reference image.
+Focus tightly on the central forehead medallion, filigree gold work, gemstones, and pearl drops.
+${aspectText}`;
+      } else {
+        shotTitle = "Image 5 — Earring Macro";
+        shotDescription = "Ultra-realistic macro close-up of the earring worn naturally on the ear, showing gold structure and colored stones.";
+        promptBody = `Create an ultra-realistic macro close-up photograph of the EXACT matching gold ${terms.earringDesc} from the uploaded jewelry reference image.
+
+The piece is worn naturally on an Indian woman's earlobe. Show the entire piece clearly in sharp macro detail, replicating ONLY the earring as shown on its dedicated stand in the reference photo.
+ZERO MOTIF TRANSFER: DO NOT add any floral connector, top flower motif, or extra elements from the necklace / mangalsutra pendant to the earring. The earring in Image 5 must be 100% identical to the reference image and identical to Image 4.
 
 Capture realistic skin texture, individual hair strands gently framing around the ear, natural shadows, and realistic jewelry attachment.
 
@@ -293,7 +355,9 @@ Extremely detailed macro photography, shallow depth of field, luxury jewelry cam
 The jewelry must be identical to the reference product with no invented, missing, or altered elements.
 
 ${aspectText}`;
+      }
       break;
+    }
 
     // IMAGE 6 — Lifestyle UGC
     case "lifestyle-ugc":
@@ -305,7 +369,7 @@ ${aspectText}`;
 She is wearing an elegant ivory and gold saree in a beautiful warm Indian home or luxury boutique environment. She naturally touches and adjusts the jewelry centerpiece with one hand while looking down at the piece with a subtle genuine smile.
 
 EARRING & PRODUCT FIDELITY:
-On her ears, she wears the EXACT matching earrings from the reference image (preserving the same upper gemstone, center motif plate, and hanging charms as seen in the reference, strictly NOT generic jhumkas). The entire jewelry set must be completely identical to the uploaded reference.
+On her ears, she wears the EXACT matching earrings from the reference image, matching the earring stands in the reference photo (without any floral connector from the pendant attached to it, and strictly NOT generic jhumkas). The entire jewelry set must be completely identical to the uploaded reference.
 
 The pose should feel spontaneous and natural, like a real customer/lifestyle jewelry photograph rather than a heavily staged advertisement.
 
@@ -351,7 +415,7 @@ ${aspectText}`;
 
 Show the same elegant Indian woman wearing the complete ${terms.productName} and the EXACT matching reference earrings. She is dressed in an ivory and gold saree and standing in an elegant warm Indian luxury interior.
 
-Medium portrait composition, beautiful natural posture, subtle confident smile, looking toward the camera. The complete jewelry should be clearly visible: the ${terms.pendantDesc} positioned naturally on her neckline, and the matching earrings visible on her ears (strictly matching the reference earring design with identical stones and charms, NOT generic jhumkas).
+Medium portrait composition, beautiful natural posture, subtle confident smile, looking toward the camera. The complete jewelry should be clearly visible: the ${terms.pendantDesc} positioned naturally on her neckline, and the matching earrings visible on her ears (strictly matching the reference earring design without any floral connector from the pendant attached to them, and strictly NOT generic jhumkas).
 
 Warm golden practical lights, soft cream background, subtle floral elements, cinematic bokeh, realistic skin and hair, physically accurate jewelry reflections.
 
